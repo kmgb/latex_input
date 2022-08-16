@@ -28,7 +28,7 @@ class LatexRDescentParser:
     def parse(self, expression) -> str:
         self.expression = expression
 
-        while self.index < len(self.expression) - 1:
+        while self.index < len(self.expression):
             self.output += self._expr()
 
         return self.output
@@ -48,7 +48,7 @@ class LatexRDescentParser:
         return self.expression[self.index]
 
     def _expr(self) -> str:
-        if self.index >= len(self.expression) - 1:
+        if self.index >= len(self.expression):
             return ""
 
         if self.peek() in ["\\", "^", "_"]:
@@ -85,7 +85,7 @@ class LatexRDescentParser:
             assert False, "Unsupported macro"
 
     def _text(self) -> str:
-        return self.consume("[a-zA-Z0-9]+")
+        return self.consume("[a-zA-Z0-9 ]+")
 
     def _char(self) -> str:
-        return self.consume("[a-zA-z0-9]")
+        return self.consume("[a-zA-z0-9 ]")
