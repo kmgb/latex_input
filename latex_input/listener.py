@@ -8,15 +8,19 @@ class KeyListener:
         if event.event_type != keyboard.KEY_DOWN:
             return
 
-        # FIXME: Bandaid for ignoring 'shift' and 'ctrl'
-        if len(event.name) > 1:
-            return
+        if any(substring in event.name
+            for substring in ["alt", "ctrl", "shift", "esc", "left", "right", "up", "down"]):
+                return
 
-        self.key_log += event.name
+        if event.name == "backspace":
+            if self.key_log:
+                self.key_log = self.key_log[:-1]
+        else:
+            self.key_log += event.name
 
     def start_listening(self):
         if self.is_listening:
-            return
+            self._clear()
 
         keyboard.hook(self._hook_callback)
         self.is_listening = True
@@ -25,10 +29,14 @@ class KeyListener:
         if not self.is_listening:
             return ""
 
-        keyboard.unhook(self._hook_callback)
-
-        self.is_listening = False
-
         key_log = self.key_log
-        self.key_log = ""
+        self._clear()
+
         return key_log
+
+    def _clear(self):
+        if self.is_listening:
+            keyboard.unhook(self._hook_callback)
+
+        self.key_log = ""
+        self.is_listening = False

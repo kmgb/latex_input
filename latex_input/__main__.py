@@ -1,4 +1,5 @@
 import keyboard
+import time
 
 from .listener import KeyListener
 from .latex_converter import latex_to_unicode
@@ -15,20 +16,24 @@ def setup_hotkeys():
     # We use CapsLock as a modifier key for the hotkey, so we should
     # disable capslock functionality
     # TODO: Disable capslock when the script starts
-    keyboard.add_hotkey('capslock+s', activation_callback)
-    keyboard.block_key('capslock')
+    keyboard.add_hotkey("capslock+s", activation_callback)
+    keyboard.block_key("capslock")
 
-    keyboard.add_hotkey('space', accept_callback)
-    keyboard.add_hotkey('escape', cancel_callback)
+    keyboard.add_hotkey("space", accept_callback)
+    keyboard.add_hotkey("escape", cancel_callback)
 
 def activation_callback():
+    # Delay for a small amount of time before backspace in order to avoid
+    # preempting applications and backspacing too early.
+    # Delay amount should be less than the key repeat speed.
+    time.sleep(0.01)
     keyboard.send("backspace") # Delete the s character
     listener.start_listening()
 
 def accept_callback():
     text = listener.stop_listening()
 
-    if text.startswith('s'):
+    if text.startswith("s"):
         text = text[1:] # Remove the activation character
 
     if not text:

@@ -16,8 +16,9 @@ r"""
 Recursive descent parser that employs the following grammar rules:
 latex -> expr*
 expr  -> ε | text | macro
-macro -> \(text|^|_){expr}
-text  -> [a-zA-Z0-9]+
+macro -> \(text|^|_){expr} NOTE: Curly braces are optional for ^ and _, but only for one character
+text  -> char+
+char  -> [a-zA-Z0-9]
 """
 class LatexRDescentParser:
     expression = ""
@@ -43,11 +44,14 @@ class LatexRDescentParser:
 
         return m.group()
 
+    def peek(self) -> str:
+        return self.expression[self.index]
+
     def _expr(self) -> str:
         if self.index >= len(self.expression) - 1:
             return ""
 
-        if self.expression[self.index] in ["\\", "^", "_"]:
+        if self.peek() in ["\\", "^", "_"]:
             return self._macro()
 
         return self._text()
@@ -55,14 +59,21 @@ class LatexRDescentParser:
     def _macro(self) -> str:
         op = self.consume(r"[\\^_]")
 
+        needs_braces = False
         if op == "\\":
             op = self._text()
+            needs_braces = True
 
-        self.consume("{")
+        if needs_braces or self.peek() == "{":
+            self.consume("{")
 
-        expr = self._expr()
+            expr = ""
+            while self.peek() != "}":
+                expr += self._expr()
 
-        self.consume("}")
+            self.consume("}")
+        else:
+            expr = self._char()
 
         if op == "^":
             return to_superscript_form(expr)
@@ -75,3 +86,6 @@ class LatexRDescentParser:
 
     def _text(self) -> str:
         return self.consume("[a-zA-Z0-9]+")
+
+    def _char(self) -> str:
+        return self.consume("[a-zA-z0-9]")
