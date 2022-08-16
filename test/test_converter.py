@@ -14,6 +14,9 @@ class TestConverter(unittest.TestCase):
             "^{ab}" : "ªᵇ",
             "r^e^{al} _t_{al}_{k}" : "rᵉªˡ ₜₐₗₖ",
             "^{abcdefghijklmnopqrstuvwxyz0123456789}" : "ªᵇᶜᵈᵉᶠᵍʰⁱʲᵏˡᵐⁿºᵖ𐞥ʳˢᵗᵘᵛʷˣʸᶻ⁰¹²³⁴⁵⁶⁷⁸⁹",
+
+            "\\epsilon\\varepsilon" : "ϵε",
+            "\\phi\\varphi" : "ϕφ",
         }
 
         for k, v in tests.items():
