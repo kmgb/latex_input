@@ -6,7 +6,6 @@ import sys
 from .listener import KeyListener
 from .latex_converter import latex_to_unicode
 
-
 app_name = "LaTeX Input"
 app_icon_file = "./icon.ico"
 listener = KeyListener()
@@ -55,14 +54,14 @@ def accept_callback():
     text = listener.stop_listening()
 
     if text.startswith("s"):
-        text = text[1:] # Remove the activation character
+        text = text[1:]  # Remove the activation character
 
     if not text:
         return
 
     translated_text = latex_to_unicode(text)
 
-    num_backspace = len(text) + 1 # +1 for space
+    num_backspace = len(text) + 1  # +1 for space
     keyboard.send(",".join(["backspace"]*num_backspace))
     print(f"Writing: {translated_text}")
     keyboard.write(translated_text)
@@ -110,7 +109,7 @@ def run_gui():
     tray_icon = SystemTrayIcon(QtGui.QIcon(app_icon_file))
     tray_icon.show()
 
-    def trigger_window(show:bool):
+    def trigger_window(show: bool):
         if show:
             window.show()
             window.raise_()

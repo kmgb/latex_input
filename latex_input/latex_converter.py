@@ -2,6 +2,7 @@ import re
 
 from latex_input.parse_unicode_data import superscript_mapping, subscript_mapping
 
+
 def latex_to_unicode(tex) -> str:
     parser = LatexRDescentParser()
 
@@ -11,22 +12,25 @@ def latex_to_unicode(tex) -> str:
         print(f"Failed to convert {tex}")
         return "ERROR"
 
-def to_superscript_form(t:str) -> str:
+
+def to_superscript_form(t: str) -> str:
     return "".join([superscript_mapping[c][0] for c in t])
 
-def to_subscript_form(t:str) -> str:
+
+def to_subscript_form(t: str) -> str:
     return "".join([subscript_mapping[c][0] for c in t])
 
-r"""
-Recursive descent parser that employs the following grammar rules:
-LaTeX   -> Expr*
-Expr    -> ε | Text | BSItem | Macro
-Macro   -> (\Text|^|_){Expr} | ^Char | _Char
-BSItem  -> \Text
-Text    -> Char+
-Char    -> [a-zA-Z0-9 ]
-"""
+
 class LatexRDescentParser:
+    r"""
+    Recursive descent parser that employs the following grammar rules:
+    LaTeX   -> Expr*
+    Expr    -> ε | Text | BSItem | Macro
+    Macro   -> (\Text|^|_){Expr} | ^Char | _Char
+    BSItem  -> \Text
+    Text    -> Char+
+    Char    -> [a-zA-Z0-9 ]
+    """
     expression = ""
     index = 0
     output = ""
@@ -91,7 +95,7 @@ class LatexRDescentParser:
             if single_char_mode:
                 expr = self._char()
             else:
-                expr = "" # No operand for simple BSItems
+                expr = ""  # No operand for simple BSItems
 
         if function == "^":
             return to_superscript_form(expr)
@@ -102,13 +106,13 @@ class LatexRDescentParser:
         else:
             return self.handle_bsitem(function)
 
-    def handle_macro(self, name:str, operand:str) -> str:
+    def handle_macro(self, name: str, operand: str) -> str:
         if name == "vec":
             return operand + u'\u20d7'
 
         assert False, "Unsupported macro"
 
-    def handle_bsitem(self, name:str) -> str:
+    def handle_bsitem(self, name: str) -> str:
         if name in latex_charlist:
             return latex_charlist[name]
 
@@ -151,7 +155,7 @@ latex_charlist = {
     "beta":    u"\u03B2",
     "gamma":   u"\u03B3",
     "delta":   u"\u03B4",
-    "epsilon": u"\u03F5", # NOTE: This is the lunate form by default. Varepsilon is the reversed-3 form
+    "epsilon": u"\u03F5",  # NOTE: This is the lunate form by default. Varepsilon is the reversed-3
     "zeta":    u"\u03B6",
     "eta":     u"\u03B7",
     "theta":   u"\u03B8",
@@ -167,47 +171,47 @@ latex_charlist = {
     "sigma":   u"\u03C3",
     "tau":     u"\u03C4",
     "upsilon": u"\u03C5",
-    "phi":     u"\u03D5", # NOTE: This is the closed form by default. Varphi is the open form
+    "phi":     u"\u03D5",  # NOTE: This is the closed form by default. Varphi is the open form
     "chi":     u"\u03C7",
     "psi":     u"\u03C8",
     "omega":   u"\u03C9",
 
     # Greek letter variants
-    "varepsilon":   u"\u03B5", # ε
-    "vartheta":     u"\u03D1", # ϑ
-    "varpi":        u"\u03D6", # ϖ
-    "varrho":       u"\u03F1", # ϱ
-    "varsigma":     u"\u03C2", # ς
-    "varphi":       u"\u03C6", # φ
+    "varepsilon":   u"\u03B5",  # ε
+    "vartheta":     u"\u03D1",  # ϑ
+    "varpi":        u"\u03D6",  # ϖ
+    "varrho":       u"\u03F1",  # ϱ
+    "varsigma":     u"\u03C2",  # ς
+    "varphi":       u"\u03C6",  # φ
 
     # Math and logic
-    "neg":         u"\u00AC", # ¬ Negation
-    "times":       u"\u00D7", # × Multiplication / cross product
-    "forall":      u"\u2200", # ∀ Upside down capital A
-    "partial":     u"\u2202", # ∂ Partial derivative symbol
-    "exists":      u"\u2203", # ∃ Backwards capital E
-    "empty":       u"\u2205", # ∅ Empty set symbol
-    "nabla":       u"\u2207", # ∇ Vector differential
-    "in":          u"\u2208", # ∈ Element of
-    "infty":       u"\u221E", # ∞ Infinity symbol
-    "land":        u"\u2227", # ∧ Logical conjunction
-    "lor":         u"\u2228", # ∨ Logical disjunction
-    "int":         u"\u222B", # ∫ Integral
-    "iint":        u"\u222C", # ∬ Double integral
-    "iiint":       u"\u222D", # ∭ Triple integral
-    "oint":        u"\u222E", # ∮ Closed integral
-    "oiint":       u"\u222F", # ∯ Closed double integral
-    "oiiint":      u"\u2230", # ∰ Closed triple integral
-    "therefore":   u"\u2234", # ∴ Therefore symbol
-    "because":     u"\u2235", # ∵ Since symbol
-    "approx":      u"\u2248", # ≈ Approx equal
-    "neq":         u"\u2260", # ≠ Not equal
-    "equiv":       u"\u2261", # ≡ Equivalence operator
-    "true":        u"\u22A4", # ⊤ Truth symbol
-    "false":       u"\u22A5", # ⊥ Falsity symbol
-    "models":      u"\u22A8", # ⊨ Double turnstile
-    "nmodels":     u"\u22AD", # ⊭ Negated double turnstile
-    "cdot":        u"\u22C5", # ⋅ Dot product operator
-    "implies":     u"\u27F9", # ⟹ Implies arrow
-    "iff":         u"\u27FA", # ⟺ If and only if arrow
+    "neg":         u"\u00AC",  # ¬ Negation
+    "times":       u"\u00D7",  # × Multiplication / cross product
+    "forall":      u"\u2200",  # ∀ Upside down capital A
+    "partial":     u"\u2202",  # ∂ Partial derivative symbol
+    "exists":      u"\u2203",  # ∃ Backwards capital E
+    "empty":       u"\u2205",  # ∅ Empty set symbol
+    "nabla":       u"\u2207",  # ∇ Vector differential
+    "in":          u"\u2208",  # ∈ Element of
+    "infty":       u"\u221E",  # ∞ Infinity symbol
+    "land":        u"\u2227",  # ∧ Logical conjunction
+    "lor":         u"\u2228",  # ∨ Logical disjunction
+    "int":         u"\u222B",  # ∫ Integral
+    "iint":        u"\u222C",  # ∬ Double integral
+    "iiint":       u"\u222D",  # ∭ Triple integral
+    "oint":        u"\u222E",  # ∮ Closed integral
+    "oiint":       u"\u222F",  # ∯ Closed double integral
+    "oiiint":      u"\u2230",  # ∰ Closed triple integral
+    "therefore":   u"\u2234",  # ∴ Therefore symbol
+    "because":     u"\u2235",  # ∵ Since symbol
+    "approx":      u"\u2248",  # ≈ Approx equal
+    "neq":         u"\u2260",  # ≠ Not equal
+    "equiv":       u"\u2261",  # ≡ Equivalence operator
+    "true":        u"\u22A4",  # ⊤ Truth symbol
+    "false":       u"\u22A5",  # ⊥ Falsity symbol
+    "models":      u"\u22A8",  # ⊨ Double turnstile
+    "nmodels":     u"\u22AD",  # ⊭ Negated double turnstile
+    "cdot":        u"\u22C5",  # ⋅ Dot product operator
+    "implies":     u"\u27F9",  # ⟹ Implies arrow
+    "iff":         u"\u27FA",  # ⟺ If and only if arrow
 }
