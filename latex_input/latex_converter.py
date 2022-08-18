@@ -1,6 +1,8 @@
 import re
 
-from latex_input.parse_unicode_data import superscript_mapping, subscript_mapping
+from latex_input.parse_unicode_data import (
+    superscript_mapping, subscript_mapping, mathbb_mapping, mathcal_mapping, mathfrak_mapping
+)
 
 
 def latex_to_unicode(tex) -> str:
@@ -13,12 +15,29 @@ def latex_to_unicode(tex) -> str:
         return "ERROR"
 
 
+def _map_text(mapping: dict[str, list[str]], text: str) -> str:
+    # Iterate all characters in text and convert them using map
+    return "".join([mapping[c][0] for c in text])
+
+
 def to_superscript_form(t: str) -> str:
-    return "".join([superscript_mapping[c][0] for c in t])
+    return _map_text(superscript_mapping, t)
 
 
 def to_subscript_form(t: str) -> str:
-    return "".join([subscript_mapping[c][0] for c in t])
+    return _map_text(subscript_mapping, t)
+
+
+def to_mathbb_form(t: str) -> str:
+    return _map_text(mathbb_mapping, t)
+
+
+def to_mathcal_form(t: str) -> str:
+    return _map_text(mathcal_mapping, t)
+
+
+def to_mathfrak_form(t: str) -> str:
+    return _map_text(mathfrak_mapping, t)
 
 
 class LatexRDescentParser:
@@ -109,6 +128,15 @@ class LatexRDescentParser:
     def handle_macro(self, name: str, operand: str) -> str:
         if name == "vec":
             return operand + u'\u20d7'
+
+        if name == "mathbb":
+            return to_mathbb_form(operand)
+
+        if name == "mathcal":
+            return to_mathcal_form(operand)
+
+        if name == "mathfrak":
+            return to_mathfrak_form(operand)
 
         assert False, "Unsupported macro"
 
