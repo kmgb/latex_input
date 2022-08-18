@@ -15,9 +15,9 @@ def latex_to_unicode(tex) -> str:
         return "ERROR"
 
 
-def _map_text(mapping: dict[str, list[str]], text: str) -> str:
+def _map_text(mapping: dict[str, str], text: str) -> str:
     # Iterate all characters in text and convert them using map
-    return "".join([mapping[c][0] for c in text])
+    return "".join([mapping[c] for c in text])
 
 
 def to_superscript_form(t: str) -> str:
