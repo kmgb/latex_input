@@ -9,6 +9,7 @@ class TestConverter(unittest.TestCase):
 
     def test_converter(self):
         tests = {
+            "":         "",
             "a":        "a",
             "^a":       "ª",
             "^ab":      "ªb",
@@ -20,11 +21,18 @@ class TestConverter(unittest.TestCase):
             "\\phi\\varphi": "ϕφ",
 
             # Broken inputs
-            "_": "ERROR",
-            "^": "ERROR",
-            "^{7654": "ERROR",
-            "_{7654": "ERROR",
-            "\\var{abc": "ERROR",
+            "_":                "ERROR",
+            "^":                "ERROR",
+            "^{7654":           "ERROR",
+            "_{7654":           "ERROR",
+            "\\var{abc":        "ERROR",
+            "\\invalid":        "ERROR",
+            "\\invalid{abc}":   "ERROR",
+            "\\invalid{}":      "ERROR",
+            "\\{}":             "ERROR",
+            "\\{":              "ERROR",
+            "\\}":              "ERROR",
+            "\\":               "ERROR",
         }
 
         for k, v in tests.items():
