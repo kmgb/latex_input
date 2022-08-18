@@ -53,7 +53,6 @@ with open("./UnicodeData.txt") as f:
                 # Intentionally overwrite if there's multiple
                 subscript_mapping[basechar] = char
 
-            # TODO: Add support for preferring one type (mathematical) over the other
             elif map_type == "<font>":
                 # Skip italic and bold variants for now, maybe we can use them in the future
                 if any(x in name for x in ["ITALIC", "BOLD"]):
