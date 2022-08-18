@@ -11,14 +11,18 @@ class TestConverter(unittest.TestCase):
         tests = {
             "":         "",
             "a":        "a",
-            "^a":       "ª",
-            "^ab":      "ªb",
-            "^{ab}":    "ªᵇ",
-            "r^e^{al} _t_{al}_{k}": "rᵉªˡ ₜₐₗₖ",
-            "^{abcdefghijklmnopqrstuvwxyz0123456789}": "ªᵇᶜᵈᵉᶠᵍʰⁱʲᵏˡᵐⁿºᵖ𐞥ʳˢᵗᵘᵛʷˣʸᶻ⁰¹²³⁴⁵⁶⁷⁸⁹",
+            "^a":       "ᵃ",
+            "^ab":      "ᵃb",
+            "^{ab}":    "ᵃᵇ",
+            "r^e^{al} _t_{al}_{k}": "rᵉᵃˡ ₜₐₗₖ",
+            "^{abcdefghijklmnopqrstuvwxyz0123456789}": "ᵃᵇᶜᵈᵉᶠᵍʰⁱʲᵏˡᵐⁿᵒᵖ𐞥ʳˢᵗᵘᵛʷˣʸᶻ⁰¹²³⁴⁵⁶⁷⁸⁹",
 
             "\\epsilon\\varepsilon": "ϵε",
             "\\phi\\varphi": "ϕφ",
+
+            "\\mathbb{Easy}":       "𝔼𝕒𝕤𝕪",
+            "\\mathcal{Medium}":    "ℳℯ𝒹𝒾𝓊𝓂",
+            "\\mathfrak{Hard}":     "ℌ𝔞𝔯𝔡",
 
             # Broken inputs
             "_":                "ERROR",
@@ -33,6 +37,7 @@ class TestConverter(unittest.TestCase):
             "\\{":              "ERROR",
             "\\}":              "ERROR",
             "\\":               "ERROR",
+            "\\mathfrak{123}":  "ERROR",
         }
 
         for k, v in tests.items():
