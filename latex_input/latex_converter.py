@@ -87,7 +87,7 @@ class LatexRDescentParser:
             self.consume("{")
 
             expr = ""
-            while self.peek() != "}":
+            while self.peek() not in ["}", ""]:
                 expr += self._expr()
 
             self.consume("}")
