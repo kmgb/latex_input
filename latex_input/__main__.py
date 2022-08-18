@@ -1,4 +1,5 @@
 import argparse
+from typing import Final
 from PyQt5 import QtGui, QtWidgets, QtCore
 import keyboard
 import sys
@@ -6,17 +7,25 @@ import sys
 from .listener import KeyListener
 from .latex_converter import latex_to_unicode
 
-app_name = "LaTeX Input"
-app_icon_file = "./icon.ico"
+APP_NAME: Final[str] = "LaTeX Input"
+APP_ICON_FILE: Final[str] = "./icon.ico"
+KEYPRESS_DELAY: Final[float] = 0.01  # Tends to be longer than this as time.sleep has a minimum
+
 listener = KeyListener()
+use_key_delay = True
 
 
 def get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--no-gui",
+        "--no-gui", "--daemon",
         action="store_true",
         help="Launch without a visible GUI"
+    )
+
+    parser.add_argument(
+        "--faster-keypresses",
+        action="store_true"
     )
 
     return parser
@@ -25,9 +34,12 @@ def get_parser() -> argparse.ArgumentParser:
 def main():
     args = get_parser().parse_args()
 
-    print(f"{app_name} started")
+    if args.faster_keypresses:
+        global use_key_delay
+        use_key_delay = False
 
     setup_hotkeys()
+    print(f"{APP_NAME} started")
 
     if args.no_gui:
         keyboard.wait()
@@ -61,10 +73,12 @@ def accept_callback():
 
     translated_text = latex_to_unicode(text)
 
+    # Press backspace to delete the entered LaTeX
     num_backspace = len(text) + 1  # +1 for space
-    keyboard.send(",".join(["backspace"]*num_backspace))
+    keyboard.write("\b" * num_backspace, delay=use_key_delay * KEYPRESS_DELAY)
+
     print(f"Writing: {translated_text}")
-    keyboard.write(translated_text)
+    keyboard.write(translated_text, delay=use_key_delay * KEYPRESS_DELAY)
 
 
 def cancel_callback():
@@ -97,8 +111,8 @@ class SystemTrayIcon(QtWidgets.QSystemTrayIcon):
 def run_gui():
     app = QtWidgets.QApplication(sys.argv)
     window = QtWidgets.QWidget()
-    window.setWindowIcon(QtGui.QIcon(app_icon_file))
-    window.setWindowTitle(app_name)
+    window.setWindowIcon(QtGui.QIcon(APP_ICON_FILE))
+    window.setWindowTitle(APP_NAME)
     layout = QtWidgets.QVBoxLayout(window)
     layout.addWidget(QtWidgets.QLabel(
         "Press <b>CapsLock+s</b> to enter input mode. Enter your desired LaTeX,"
@@ -106,7 +120,19 @@ def run_gui():
         "<br>Try it in the text box below."))
     layout.addWidget(QtWidgets.QTextEdit(window))
 
-    tray_icon = SystemTrayIcon(QtGui.QIcon(app_icon_file))
+    key_delay_checkbox = QtWidgets.QCheckBox(
+        "Slower key presses (some applications need this to work properly — including this window)"
+    )
+    key_delay_checkbox.setChecked(use_key_delay)
+
+    def on_keydelay_checked(state: bool):
+        global use_key_delay
+        use_key_delay = state
+
+    key_delay_checkbox.clicked.connect(on_keydelay_checked)
+    layout.addWidget(key_delay_checkbox)
+
+    tray_icon = SystemTrayIcon(QtGui.QIcon(APP_ICON_FILE))
     tray_icon.show()
 
     def trigger_window(show: bool):
