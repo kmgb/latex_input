@@ -20,6 +20,10 @@ class TestConverter(unittest.TestCase):
             "\\epsilon\\varepsilon": "ϵε",
             "\\phi\\varphi": "ϕφ",
 
+            "\\mathbb{Easy}":       "𝔼𝕒𝕤𝕪",
+            "\\mathcal{Medium}":    "ℳℯ𝒹𝒾𝓊𝓂",
+            "\\mathfrak{Hard}":     "ℌ𝔞𝔯𝔡",
+
             # Broken inputs
             "_":                "ERROR",
             "^":                "ERROR",
@@ -33,6 +37,7 @@ class TestConverter(unittest.TestCase):
             "\\{":              "ERROR",
             "\\}":              "ERROR",
             "\\":               "ERROR",
+            "\\mathfrak{123}":  "ERROR",
         }
 
         for k, v in tests.items():
