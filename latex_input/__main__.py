@@ -3,13 +3,18 @@ from typing import Final
 from PyQt5 import QtGui, QtWidgets, QtCore
 import keyboard
 import sys
+import time
 
 from .listener import KeyListener
 from .latex_converter import latex_to_unicode
 
 APP_NAME: Final[str] = "LaTeX Input"
 APP_ICON_FILE: Final[str] = "./icon.ico"
-KEYPRESS_DELAY: Final[float] = 0.01  # Tends to be longer than this as time.sleep has a minimum
+
+# Necessary, as some applications will process keystrokes out
+# of order if they arrive too quickly, or they won't process
+# them at all.
+KEYPRESS_DELAY: Final[float] = 0.002
 
 listener = KeyListener()
 use_key_delay = True
@@ -75,10 +80,28 @@ def accept_callback():
 
     # Press backspace to delete the entered LaTeX
     num_backspace = len(text) + 1  # +1 for space
-    keyboard.write("\b" * num_backspace, delay=use_key_delay * KEYPRESS_DELAY)
+    write_with_delay("\b" * num_backspace, delay=use_key_delay * KEYPRESS_DELAY)
 
     print(f"Writing: {translated_text}")
-    keyboard.write(translated_text, delay=use_key_delay * KEYPRESS_DELAY)
+    write_with_delay(translated_text, delay=use_key_delay * KEYPRESS_DELAY)
+
+
+def write_with_delay(text: str, delay: float):
+    def accurate_delay(delay):
+        """
+        Function to provide accurate time delay
+        From https://stackoverflow.com/a/50899124
+        """
+        target_time = time.perf_counter() + delay
+        while time.perf_counter() < target_time:
+            pass
+
+    # FIXME: Can use keyboard.write(text, delay=...) after Python 3.11
+    for c in text:
+        # Don't use built-in delay parameter as it uses time.sleep
+        # which doesn't have good time accurancy until Python 3.11
+        keyboard.write(c)
+        accurate_delay(delay)
 
 
 def cancel_callback():
