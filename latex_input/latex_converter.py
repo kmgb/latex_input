@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 import re
 
+from .latex_ast import ASTLatex, ASTLiteral, ASTNode
+
 from latex_input.parse_unicode_data import (
     superscript_mapping, subscript_mapping, mathbb_mapping, mathcal_mapping, mathfrak_mapping
 )
@@ -43,20 +45,6 @@ def to_mathfrak_form(t: str) -> str:
     return _map_text(mathfrak_mapping, t)
 
 
-@dataclass
-class ASTNode:
-    def convert(self) -> str:
-        assert False, "Not implemented"
-
-
-@dataclass
-class ASTLaTeX(ASTNode):
-    nodes: list[ASTNode]
-
-    def convert(self) -> str:
-        return "".join(n.convert() for n in self.nodes)
-
-
 class LatexRDescentParser:
     r"""
     Recursive descent parser that employs the following grammar rules:
@@ -72,7 +60,7 @@ class LatexRDescentParser:
     char_regex = "[a-zA-Z0-9 ]"
     text_regex = char_regex + "+"
 
-    def parse(self, expression) -> ASTNode:
+    def parse(self, expression) -> ASTLatex:
         self.expression = expression
         self.index = 0
         nodes = []
@@ -80,7 +68,13 @@ class LatexRDescentParser:
         while self.index < len(self.expression):
             nodes.append(self._expr())
 
-        return ASTLaTeX(nodes)
+        return ASTLatex(nodes)
+
+    def peek(self) -> str:
+        if self.index >= len(self.expression):
+            return ""
+
+        return self.expression[self.index]
 
     def consume(self, expr) -> str:
         m = re.match(expr, self.expression[self.index:])
@@ -88,15 +82,13 @@ class LatexRDescentParser:
 
         self.index += m.end()
 
-        # print(f"ATE {m.group()}")
-
         return m.group()
 
-    def peek(self) -> str:
-        if self.index >= len(self.expression):
-            return ""
+    def consume_text(self) -> str:
+        return self.consume(self.text_regex)
 
-        return self.expression[self.index]
+    def consume_char(self) -> str:
+        return self.consume(self.char_regex)
 
     def _expr(self) -> ASTNode:
         if self.index >= len(self.expression):
@@ -105,7 +97,7 @@ class LatexRDescentParser:
         if self.peek() in ["\\", "^", "_"]:
             return self._macro()
 
-        return ASTLiteral(self._text())
+        return ASTLiteral(self.consume_text())
 
     def _macro(self) -> ASTNode:
         function = self.consume(r"[\\^_]")
@@ -113,7 +105,7 @@ class LatexRDescentParser:
         single_char_mode = False
 
         if function == "\\":
-            function = self._text()
+            function = self.consume_text()
 
         if function in ["^", "_"]:
             single_char_mode = True
@@ -130,7 +122,7 @@ class LatexRDescentParser:
             self.consume("}")
         else:
             if single_char_mode:
-                maybe_expr = [ASTLiteral(self._char())]
+                maybe_expr = [ASTLiteral(self.consume_char())]
             else:
                 maybe_expr = None  # No operand for simple BSItems
 
@@ -138,50 +130,6 @@ class LatexRDescentParser:
             return ASTFunction(function, maybe_expr)
         else:
             return ASTSymbol(function)
-
-        # if function == "^":
-        #     return to_superscript_form(expr)
-        # elif function == "_":
-        #     return to_subscript_form(expr)
-        # elif expr:
-        #     return self.handle_macro(function, expr)
-        # else:
-        #     return self.handle_bsitem(function)
-
-    def handle_macro(self, name: str, operand: str) -> str:
-        if name == "vec":
-            return operand + u'\u20d7'
-
-        if name == "mathbb":
-            return to_mathbb_form(operand)
-
-        if name == "mathcal":
-            return to_mathcal_form(operand)
-
-        if name == "mathfrak":
-            return to_mathfrak_form(operand)
-
-        assert False, "Unsupported macro"
-
-    def handle_bsitem(self, name: str) -> str:
-        if name in latex_charlist:
-            return latex_charlist[name]
-
-        assert False, "Unsupported bsitem"
-
-    def _text(self) -> str:
-        return self.consume(self.text_regex)
-
-    def _char(self) -> str:
-        return self.consume(self.char_regex)
-
-
-@dataclass
-class ASTLiteral(ASTNode):
-    text: str
-
-    def convert(self) -> str:
-        return self.text
 
 
 @dataclass
