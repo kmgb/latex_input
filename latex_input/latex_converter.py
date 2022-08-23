@@ -137,7 +137,8 @@ class ASTSymbol(ASTNode):
     name: str
 
     def convert(self) -> str:
-        return latex_charlist.get(self.name) or "INVALID SYMBOL"
+        assert self.name in latex_charlist, "Unsupported symbol"
+        return latex_charlist[self.name]
 
 
 @dataclass

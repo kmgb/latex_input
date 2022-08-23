@@ -30,7 +30,7 @@ class TestConverter(unittest.TestCase):
             "^{7654":           "ERROR",
             "_{7654":           "ERROR",
             "\\var{abc":        "ERROR",
-            "\\invalid":        "INVALID SYMBOL",
+            "\\invalid":        "ERROR",
             "\\invalid{abc}":   "ERROR",
             "\\invalid{}":      "ERROR",
             "\\{}":             "ERROR",
