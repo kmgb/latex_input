@@ -41,7 +41,8 @@ class TestConverter(unittest.TestCase):
         }
 
         for k, v in tests.items():
-            try:
-                self.assertEqual(latex_to_unicode(k), v, f"Failed on test for {k, v}")
-            except AssertionError as e:
-                self.fail(f"Exception raised on test for {k, v}: {e}")
+            with self.subTest(k):
+                try:
+                    self.assertEqual(latex_to_unicode(k), v, f"Failed on test for {k, v}")
+                except AssertionError as e:
+                    self.fail(f"Exception raised on test for {k, v}: {e}")

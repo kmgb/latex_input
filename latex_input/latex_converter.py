@@ -1,4 +1,7 @@
+from dataclasses import dataclass
 import re
+
+from .latex_ast import ASTLatex, ASTLiteral, ASTNode
 
 from latex_input.parse_unicode_data import (
     superscript_mapping, subscript_mapping, mathbb_mapping, mathcal_mapping, mathfrak_mapping
@@ -9,7 +12,9 @@ def latex_to_unicode(tex) -> str:
     parser = LatexRDescentParser()
 
     try:
-        return parser.parse(tex)
+        result = parser.parse(tex)
+        print(result)
+        return result.convert()
     except Exception as e:
         print(f"Failed to convert {tex}")
         return "ERROR"
@@ -52,29 +57,18 @@ class LatexRDescentParser:
     """
     expression = ""
     index = 0
-    output = ""
     char_regex = "[a-zA-Z0-9 ]"
     text_regex = char_regex + "+"
 
-    def parse(self, expression) -> str:
+    def parse(self, expression) -> ASTLatex:
         self.expression = expression
         self.index = 0
-        self.output = ""
+        nodes = []
 
         while self.index < len(self.expression):
-            self.output += self._expr()
+            nodes.append(self._expr())
 
-        return self.output
-
-    def consume(self, expr) -> str:
-        m = re.match(expr, self.expression[self.index:])
-        assert m
-
-        self.index += m.end()
-
-        # print(f"ATE {m.group()}")
-
-        return m.group()
+        return ASTLatex(nodes)
 
     def peek(self) -> str:
         if self.index >= len(self.expression):
@@ -82,75 +76,101 @@ class LatexRDescentParser:
 
         return self.expression[self.index]
 
-    def _expr(self) -> str:
+    def consume(self, expr) -> str:
+        m = re.match(expr, self.expression[self.index:])
+        assert m
+
+        self.index += m.end()
+
+        return m.group()
+
+    def consume_text(self) -> str:
+        return self.consume(self.text_regex)
+
+    def consume_char(self) -> str:
+        return self.consume(self.char_regex)
+
+    def _expr(self) -> ASTNode:
         if self.index >= len(self.expression):
-            return ""
+            return ASTLiteral("")
 
         if self.peek() in ["\\", "^", "_"]:
             return self._macro()
 
-        return self._text()
+        return ASTLiteral(self.consume_text())
 
-    def _macro(self) -> str:
+    def _macro(self) -> ASTNode:
         function = self.consume(r"[\\^_]")
 
         single_char_mode = False
 
         if function == "\\":
-            function = self._text()
+            function = self.consume_text()
 
         if function in ["^", "_"]:
             single_char_mode = True
 
+        maybe_expr: list[ASTNode] | None
+
         if self.peek() == "{":
             self.consume("{")
 
-            expr = ""
+            maybe_expr = []
             while self.peek() not in ["}", ""]:
-                expr += self._expr()
+                maybe_expr.append(self._expr())
 
             self.consume("}")
         else:
             if single_char_mode:
-                expr = self._char()
+                maybe_expr = [ASTLiteral(self.consume_char())]
             else:
-                expr = ""  # No operand for simple BSItems
+                maybe_expr = None  # No operand for simple BSItems
 
-        if function == "^":
-            return to_superscript_form(expr)
-        elif function == "_":
-            return to_subscript_form(expr)
-        elif expr:
-            return self.handle_macro(function, expr)
+        if maybe_expr is not None:
+            return ASTFunction(function, maybe_expr)
         else:
-            return self.handle_bsitem(function)
+            return ASTSymbol(function)
 
-    def handle_macro(self, name: str, operand: str) -> str:
-        if name == "vec":
+
+@dataclass
+class ASTSymbol(ASTNode):
+    name: str
+
+    def convert(self) -> str:
+        assert self.name in latex_charlist, "Unsupported symbol"
+        return latex_charlist[self.name]
+
+
+@dataclass
+class ASTFunction(ASTNode):
+    name: str
+    operands: list[ASTNode]
+
+    def convert(self) -> str:
+        assert len(self.operands) == 1
+
+        operand = "".join(x.convert() for x in self.operands)
+
+        if self.name == "^":
+            return to_superscript_form(operand)
+
+        elif self.name == "_":
+            return to_subscript_form(operand)
+
+        elif self.name == "vec":
             return operand + u'\u20d7'
 
-        if name == "mathbb":
+        elif self.name == "mathbb":
             return to_mathbb_form(operand)
 
-        if name == "mathcal":
+        elif self.name == "mathcal":
             return to_mathcal_form(operand)
 
-        if name == "mathfrak":
+        elif self.name == "mathfrak":
             return to_mathfrak_form(operand)
 
-        assert False, "Unsupported macro"
-
-    def handle_bsitem(self, name: str) -> str:
-        if name in latex_charlist:
-            return latex_charlist[name]
-
-        assert False, "Unsupported bsitem"
-
-    def _text(self) -> str:
-        return self.consume(self.text_regex)
-
-    def _char(self) -> str:
-        return self.consume(self.char_regex)
+        else:
+            assert False, "Function not implemented"
 
 
 latex_charlist = {
