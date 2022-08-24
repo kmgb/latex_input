@@ -92,7 +92,6 @@ class ASTLiteral(ASTNode):
                         and v.is_italic == context.is_italic
                         # and v.is_mathematical == context.is_mathematical
                         and v.is_script == context.is_script):
-                    print(f"Found {v.text}")
                     conversion = v.text
                     break
                     # TODO: Fail if no variant found
@@ -245,28 +244,40 @@ class ASTFunction(ASTNode):
         elif self.name == "vec":
             return operand + u'\u20d7'
 
+        # TODO: More scalable approach to fixing conflicts
         elif self.name == "mathbb":
             new_context.is_mathematical = True
             new_context.is_double_struck = True
+            new_context.is_italic = False  # Italic doublestruck variants don't exist
+            new_context.is_bold = False  # Bold doublestruck variants don't exist
 
         elif self.name == "mathcal":
             new_context.is_mathematical = True
             new_context.is_script = True
+            new_context.is_italic = False  # Italic script variants don't exist
 
         elif self.name == "mathfrak":
             new_context.is_mathematical = True
             new_context.is_fraktur = True
+            new_context.is_italic = False  # Italic Fraktur variants don't exist
 
         # HACK: Shorthands
         elif self.name == "b":
             new_context.is_bold = True
+            new_context.is_double_struck = False  # Bold doublestruck doesn't exist
 
         elif self.name == "i":
             new_context.is_italic = True
+            new_context.is_fraktur = False  # Italic Fraktur doesn't exist
+            new_context.is_script = False  # Italic script doesn't exist
+            new_context.is_double_struck = False  # Bold doublestruck doesn't exist
 
         elif self.name == "bi" or self.name == "ib":
             new_context.is_bold = True
             new_context.is_italic = True
+            new_context.is_double_struck = False  # Bold doublestruck doesn't exist
+            new_context.is_fraktur = False  # Italic Fraktur doesn't exist
+            new_context.is_script = False  # Italic script doesn't exist
 
         else:
             assert False, "Function not implemented"

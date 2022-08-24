@@ -37,6 +37,20 @@ class TestConverter(unittest.TestCase):
             "\\i{italic}\\b{bold}": "𝑖𝑡𝑎𝑙𝑖𝑐𝐛𝐨𝐥𝐝",
             "\\ib{}":               "",
 
+            # Combinations
+            "\\i{\\mathbb{Easy}}":      "𝔼𝕒𝕤𝕪",  # Note: i has no effect
+            "\\b{\\mathbb{Easy}}":      "𝔼𝕒𝕤𝕪",  # Note: b has no effect
+            "\\i{\\mathcal{Medium}}":   "ℳℯ𝒹𝒾𝓊𝓂",  # Note: i has no effect
+            "\\b{\\mathcal{Medium}}":   "𝓜𝓮𝓭𝓲𝓾𝓶",
+            "\\i{\\mathfrak{Hard}}":    "ℌ𝔞𝔯𝔡",  # Note: i has no effect
+            "\\b{\\mathfrak{Hard}}":    "𝕳𝖆𝖗𝖉",
+            "\\mathbb{\\i{Easy}}":      "𝐸𝑎𝑠𝑦",  # Note: mathbb has no effect
+            "\\mathbb{\\b{Easy}}":      "𝐄𝐚𝐬𝐲",  # Note: mathbb has no effect
+            "\\mathcal{\\i{Medium}}":   "𝑀𝑒𝑑𝑖𝑢𝑚",  # Note: mathcal has no effect
+            "\\mathcal{\\b{Medium}}":   "𝓜𝓮𝓭𝓲𝓾𝓶",
+            "\\mathfrak{\\b{Hard}}":    "𝕳𝖆𝖗𝖉",
+            "\\mathfrak{\\i{Hard}}":    "𝐻𝑎𝑟𝑑",  # Note: mathfrak has no effect
+
             # Escapes
             "\\{":              "{",
             "\\}":              "}",
