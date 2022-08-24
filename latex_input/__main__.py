@@ -6,10 +6,11 @@ import sys
 import time
 
 from .listener import KeyListener
-from .latex_converter import latex_to_unicode
+from .latex_converter import latex_to_unicode, FontContext
 
 APP_NAME: Final[str] = "LaTeX Input"
 APP_ICON_FILE: Final[str] = "./icon.ico"
+TEXT_EDIT_FONTSIZE: Final[int] = 12
 
 # Necessary, as some applications will process keystrokes out
 # of order if they arrive too quickly, or they won't process
@@ -18,6 +19,7 @@ KEYPRESS_DELAY: Final[float] = 0.002
 
 listener = KeyListener()
 use_key_delay = True
+is_math_mode = True
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -30,7 +32,14 @@ def get_parser() -> argparse.ArgumentParser:
 
     parser.add_argument(
         "--faster-keypresses",
-        action="store_true"
+        action="store_true",
+        help="Barely faster keypresses, can cause applications to misbehave"
+    )
+
+    # --math-mode and --no-math-mode
+    parser.add_argument(
+        "--math-mode",
+        action=argparse.BooleanOptionalAction
     )
 
     return parser
@@ -42,6 +51,14 @@ def main():
     if args.faster_keypresses:
         global use_key_delay
         use_key_delay = False
+
+    if args.math_mode is None:
+        # TODO: Load from preferences file
+        pass
+
+    elif not args.math_mode:
+        global is_math_mode
+        is_math_mode = False
 
     setup_hotkeys()
     print(f"{APP_NAME} started")
@@ -76,7 +93,7 @@ def accept_callback():
     if not text:
         return
 
-    translated_text = latex_to_unicode(text)
+    translated_text = latex_to_unicode(text, FontContext(is_italic=is_math_mode))
 
     # Press backspace to delete the entered LaTeX
     num_backspace = len(text) + 1  # +1 for space
@@ -141,7 +158,23 @@ def run_gui():
         "Press <b>CapsLock+s</b> to enter input mode. Enter your desired LaTeX,"
         "then press <b>space</b> to translate the text and exit input mode."
         "<br>Try it in the text box below."))
-    layout.addWidget(QtWidgets.QTextEdit(window))
+    text_edit = QtWidgets.QTextEdit(window)
+    text_edit_font = text_edit.font()
+    text_edit_font.setPointSize(TEXT_EDIT_FONTSIZE)
+    text_edit.setFont(text_edit_font)
+    layout.addWidget(text_edit)
+
+    math_mode_checkbox = QtWidgets.QCheckBox(
+        "Math mode — italic text by default"
+    )
+    math_mode_checkbox.setChecked(is_math_mode)
+
+    def on_mathmode_checked(state: bool):
+        global is_math_mode
+        is_math_mode = state
+
+    math_mode_checkbox.clicked.connect(on_mathmode_checked)
+    layout.addWidget(math_mode_checkbox)
 
     key_delay_checkbox = QtWidgets.QCheckBox(
         "Slower key presses (some applications need this to work properly — including this window)"
