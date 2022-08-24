@@ -1,20 +1,27 @@
-from collections import defaultdict
+from dataclasses import dataclass
 import typing
 
-# A -> 𝒜
-mathbb_mapping = dict[str, str]()
-mathcal_mapping = dict[str, str]()
-mathfrak_mapping = dict[str, str]()
+
+@dataclass
+class CharacterFontVariant:
+    text: str
+    is_bold: bool
+    is_double_struck: bool
+    is_fraktur: bool
+    is_italic: bool
+    is_mathematical: bool
+    is_monospace: bool
+    is_sans_serif: bool
+    is_script: bool
+
+
 subscript_mapping = dict[str, str]()
 superscript_mapping = dict[str, str]()
 
-with open("./UnicodeData.txt") as f:
-    # A -> [(𝒜, MATHEMATICAL SCRIPT CAPITAL A), ...]
-    # Temporary mappings that store all found values
-    mathbb_data = defaultdict[str, list[tuple[str, str]]](list)
-    mathcal_data = defaultdict[str, list[tuple[str, str]]](list)
-    mathfrak_data = defaultdict[str, list[tuple[str, str]]](list)
+character_font_variants = dict[str, list[CharacterFontVariant]]()
 
+
+with open("./UnicodeData.txt", encoding="utf-8") as f:
     for line in f:
         fields = line.split(";")
         assert len(fields) == 15
@@ -54,34 +61,19 @@ with open("./UnicodeData.txt") as f:
                 subscript_mapping[basechar] = char
 
             elif map_type == "<font>":
-                # Skip italic and bold variants for now, maybe we can use them in the future
-                if any(x in name for x in ["ITALIC", "BOLD"]):
-                    continue
+                variant = CharacterFontVariant(
+                    char,
+                    is_mathematical="MATHEMATICAL" in name,
+                    is_bold="BOLD" in name,
+                    is_double_struck="DOUBLE-STRUCK" in name,
+                    is_fraktur=any(x in name for x in ["FRAKTUR", "BLACK-LETTER"]),
+                    is_italic="ITALIC" in name,
+                    is_monospace="MONOSPACE" in name,
+                    is_sans_serif="SANS-SERIF" in name,
+                    is_script="SCRIPT" in name,
+                )
 
-                if name.startswith(("DOUBLE-STRUCK ", "MATHEMATICAL DOUBLE-STRUCK ")):
-                    mathbb_data[basechar].append((char, name))
+                character_font_variants.setdefault(basechar, []).append(variant)
 
-                elif name.startswith(("SCRIPT ", "MATHEMATICAL SCRIPT ")):
-                    mathcal_data[basechar].append((char, name))
-
-                elif name.startswith(("MATHEMATICAL FRAKTUR ", "BLACK-LETTER ")):
-                    mathfrak_data[basechar].append((char, name))
-
-    # Find all mappings with multiple characters, and prefer the mathematical variant
-    # for consistency. Generally, if there's more than one match for these sets, one is
-    # guaranteed the mathematical variant.
-    for intermediate, resultant in [
-            (mathbb_data, mathbb_mapping),
-            (mathcal_data, mathcal_mapping),
-            (mathfrak_data, mathfrak_mapping)
-    ]:
-
-        for k, v in intermediate.items():
-            value = ""
-
-            if len(v) == 1:
-                value = v[0][0]
-            else:
-                value = next(x[0] for x in v if x[1].startswith("MATHEMATICAL "))
-
-            resultant[k] = value
+if __name__ == "__main__":
+    print(str(character_font_variants).encode("utf-8"))

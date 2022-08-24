@@ -1,10 +1,9 @@
+import copy
 from dataclasses import dataclass
 import re
 
-from .latex_ast import ASTLatex, ASTLiteral, ASTNode
-
 from latex_input.parse_unicode_data import (
-    superscript_mapping, subscript_mapping, mathbb_mapping, mathcal_mapping, mathfrak_mapping
+    superscript_mapping, subscript_mapping, character_font_variants
 )
 
 
@@ -16,7 +15,7 @@ def latex_to_unicode(tex) -> str:
         print(result)
         return result.convert()
     except Exception as e:
-        print(f"Failed to convert {tex}")
+        print(f"Failed to convert {tex}, Error = {e}")
         return "ERROR"
 
 
@@ -33,16 +32,75 @@ def to_subscript_form(t: str) -> str:
     return _map_text(subscript_mapping, t)
 
 
-def to_mathbb_form(t: str) -> str:
-    return _map_text(mathbb_mapping, t)
+@dataclass
+class FontContext:
+    is_bold: bool = False
+    is_double_struck: bool = False
+    is_fraktur: bool = False
+    is_italic: bool = False
+    is_mathematical: bool = False
+    is_script: bool = False
+
+    def is_trivial(self) -> bool:
+        return not (self.is_bold or self.is_double_struck or
+                    self.is_fraktur or self.is_italic or
+                    # self.is_mathematical or
+                    self.is_script)
 
 
-def to_mathcal_form(t: str) -> str:
-    return _map_text(mathcal_mapping, t)
+# HACK: Global font context stack used for AST conversions
+font_context_stack = list[FontContext]()
+font_context_stack.append(FontContext())
 
 
-def to_mathfrak_form(t: str) -> str:
-    return _map_text(mathfrak_mapping, t)
+@dataclass
+class ASTNode:
+    def convert(self) -> str:
+        assert False, "Not implemented"
+
+
+@dataclass
+class ASTLatex(ASTNode):
+    nodes: list[ASTNode]
+
+    def convert(self) -> str:
+        return "".join(n.convert() for n in self.nodes)
+
+
+@dataclass
+class ASTLiteral(ASTNode):
+    text: str
+
+    # TODO: Prefer mathematical over non-mathematical if specified
+    # Also, determine if this actually causes problems
+
+    def convert(self) -> str:
+        context = font_context_stack[-1]
+
+        if context.is_trivial():
+            return self.text
+
+        output = ""
+        for basechar in self.text:
+            variants = character_font_variants[basechar]
+            conversion = ""
+
+            for v in variants:
+                if (v.is_bold == context.is_bold
+                        and v.is_double_struck == context.is_double_struck
+                        and v.is_fraktur == context.is_fraktur
+                        and v.is_italic == context.is_italic
+                        # and v.is_mathematical == context.is_mathematical
+                        and v.is_script == context.is_script):
+                    print(f"Found {v.text}")
+                    conversion = v.text
+                    break
+                    # TODO: Fail if no variant found
+
+            assert conversion, f"No conversion found for {basechar} with context {context}"
+            output += conversion
+
+        return output
 
 
 class LatexRDescentParser:
@@ -138,7 +196,9 @@ class ASTSymbol(ASTNode):
 
     def convert(self) -> str:
         assert self.name in latex_charlist, "Unsupported symbol"
-        return latex_charlist[self.name]
+        basechar = latex_charlist[self.name]
+
+        return ASTLiteral(basechar).convert()
 
 
 @dataclass
@@ -147,9 +207,9 @@ class ASTFunction(ASTNode):
     operands: list[ASTNode]
 
     def convert(self) -> str:
-        assert len(self.operands) == 1
-
         operand = "".join(x.convert() for x in self.operands)
+        current_context = font_context_stack[-1]
+        new_context = copy.copy(current_context)
 
         if self.name == "^":
             return to_superscript_form(operand)
@@ -161,16 +221,37 @@ class ASTFunction(ASTNode):
             return operand + u'\u20d7'
 
         elif self.name == "mathbb":
-            return to_mathbb_form(operand)
+            new_context.is_mathematical = True
+            new_context.is_double_struck = True
 
         elif self.name == "mathcal":
-            return to_mathcal_form(operand)
+            new_context.is_mathematical = True
+            new_context.is_script = True
 
         elif self.name == "mathfrak":
-            return to_mathfrak_form(operand)
+            new_context.is_mathematical = True
+            new_context.is_fraktur = True
+
+        # HACK: Shorthands
+        elif self.name == "b":
+            new_context.is_bold = True
+
+        elif self.name == "i":
+            new_context.is_italic = True
+
+        elif self.name == "bi" or self.name == "ib":
+            new_context.is_bold = True
+            new_context.is_italic = True
 
         else:
             assert False, "Function not implemented"
+
+        font_context_stack.append(new_context)
+        # TODO: Find alternative to running this twice
+        new_operand = "".join(x.convert() for x in self.operands)
+        font_context_stack.pop()
+
+        return new_operand
 
 
 latex_charlist = {

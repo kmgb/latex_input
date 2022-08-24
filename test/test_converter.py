@@ -1,3 +1,4 @@
+import time
 from latex_input.latex_converter import latex_to_unicode
 
 import unittest
@@ -23,6 +24,13 @@ class TestConverter(unittest.TestCase):
             "\\mathbb{Easy}":       "𝔼𝕒𝕤𝕪",
             "\\mathcal{Medium}":    "ℳℯ𝒹𝒾𝓊𝓂",
             "\\mathfrak{Hard}":     "ℌ𝔞𝔯𝔡",
+
+            # Non-standard shorthands
+            "\\b{boldtext}":        "𝐛𝐨𝐥𝐝𝐭𝐞𝐱𝐭",
+            "\\i{italictext}":      "𝑖𝑡𝑎𝑙𝑖𝑐𝑡𝑒𝑥𝑡",
+            "\\bi{bolditalic}":     "𝒃𝒐𝒍𝒅𝒊𝒕𝒂𝒍𝒊𝒄",
+            "\\ib{italicbold}":     "𝒊𝒕𝒂𝒍𝒊𝒄𝒃𝒐𝒍𝒅",
+            "\\ib{}":               "",
 
             # Broken inputs
             "_":                "ERROR",
