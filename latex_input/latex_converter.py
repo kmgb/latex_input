@@ -13,15 +13,16 @@ class FontContext:
     is_double_struck: bool = False
     is_fraktur: bool = False
     is_italic: bool = False
-    is_mathematical: bool = False
     is_sans_serif: bool = False
     is_script: bool = False
+    is_subscript: bool = False
+    is_superscript: bool = False
 
     def is_trivial(self) -> bool:
         return not (self.is_bold or self.is_double_struck or
                     self.is_fraktur or self.is_italic or
-                    # self.is_mathematical or
-                    self.is_script)
+                    self.is_script or self.is_subscript or
+                    self.is_superscript)
 
 
 # HACK: Global font context stack used for AST conversions
@@ -80,6 +81,12 @@ class ASTLiteral(ASTNode):
 
         if context.is_trivial():
             return self.text
+
+        if context.is_superscript:
+            return to_superscript_form(self.text)
+
+        elif context.is_subscript:
+            return to_subscript_form(self.text)
 
         output = ""
         for basechar in self.text:
@@ -241,28 +248,25 @@ class ASTFunction(ASTNode):
         new_context = copy.copy(current_context)
 
         if self.name == "^":
-            return to_superscript_form(operand)
+            new_context.is_superscript = True
 
         elif self.name == "_":
-            return to_subscript_form(operand)
+            new_context.is_subscript = True
 
         elif self.name == "vec":
             return operand + u'\u20d7'
 
         # TODO: More scalable approach to fixing conflicts
         elif self.name == "mathbb":
-            new_context.is_mathematical = True
             new_context.is_double_struck = True
             new_context.is_italic = False  # Italic doublestruck variants don't exist
             new_context.is_bold = False  # Bold doublestruck variants don't exist
 
         elif self.name == "mathcal":
-            new_context.is_mathematical = True
             new_context.is_script = True
             new_context.is_italic = False  # Italic script variants don't exist
 
         elif self.name == "mathfrak":
-            new_context.is_mathematical = True
             new_context.is_fraktur = True
             new_context.is_italic = False  # Italic Fraktur variants don't exist
 
