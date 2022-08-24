@@ -7,31 +7,6 @@ from latex_input.parse_unicode_data import (
 )
 
 
-def latex_to_unicode(tex) -> str:
-    parser = LatexRDescentParser()
-
-    try:
-        result = parser.parse(tex)
-        print(result)
-        return result.convert()
-    except Exception as e:
-        print(f"Failed to convert {tex}, Error = {e}")
-        return "ERROR"
-
-
-def _map_text(mapping: dict[str, str], text: str) -> str:
-    # Iterate all characters in text and convert them using map
-    return "".join([mapping.get(c, c) for c in text])
-
-
-def to_superscript_form(t: str) -> str:
-    return _map_text(superscript_mapping, t)
-
-
-def to_subscript_form(t: str) -> str:
-    return _map_text(subscript_mapping, t)
-
-
 @dataclass
 class FontContext:
     is_bold: bool = False
@@ -50,7 +25,35 @@ class FontContext:
 
 # HACK: Global font context stack used for AST conversions
 font_context_stack = list[FontContext]()
-font_context_stack.append(FontContext())
+
+
+def latex_to_unicode(tex, context=FontContext()) -> str:
+    parser = LatexRDescentParser()
+
+    font_context_stack.append(context)
+
+    try:
+        result = parser.parse(tex)
+        print(result)
+        return result.convert()
+    except Exception as e:
+        print(f"Failed to convert {tex}, Error = {e}")
+        return "ERROR"
+    finally:
+        font_context_stack.pop()
+
+
+def _map_text(mapping: dict[str, str], text: str) -> str:
+    # Iterate all characters in text and convert them using map
+    return "".join([mapping.get(c, c) for c in text])
+
+
+def to_superscript_form(t: str) -> str:
+    return _map_text(superscript_mapping, t)
+
+
+def to_subscript_form(t: str) -> str:
+    return _map_text(subscript_mapping, t)
 
 
 @dataclass
@@ -117,8 +120,8 @@ class LatexRDescentParser:
     """
     expression = ""
     index = 0
-    char_regex = re.compile(r"(?:[a-zA-Z0-9 \!]|(?:\\[\\\^_\{}]))")
-    text_regex = re.compile(r"(?:[a-zA-Z0-9 \!]|(?:\\[\\\^_\{}]))+")
+    char_regex = re.compile(r"(?:[a-zA-Z0-9 =\!]|(?:\\[\\\^_\{}]))")
+    text_regex = re.compile(r"(?:[a-zA-Z0-9 =\!]|(?:\\[\\\^_\{}]))+")
 
     def parse(self, expression) -> ASTLatex:
         self.expression = expression
