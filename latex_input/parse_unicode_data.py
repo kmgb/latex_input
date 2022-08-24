@@ -53,7 +53,7 @@ with open("./UnicodeData.txt", encoding="utf-8") as f:
 
             if map_type == "<super>":
                 # Intentionally overwrite if there's multiple
-                # Later unicode values tend to work look more consistent with one another
+                # Later unicode values tend to look more consistent with one another
                 superscript_mapping[basechar] = char
 
             elif map_type == "<sub>":

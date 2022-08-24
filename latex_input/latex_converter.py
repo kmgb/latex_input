@@ -14,6 +14,7 @@ class FontContext:
     is_fraktur: bool = False
     is_italic: bool = False
     is_mathematical: bool = False
+    is_sans_serif: bool = False
     is_script: bool = False
 
     def is_trivial(self) -> bool:
@@ -74,9 +75,6 @@ class ASTLatex(ASTNode):
 class ASTLiteral(ASTNode):
     text: str
 
-    # TODO: Prefer mathematical over non-mathematical if specified
-    # Also, determine if this actually causes problems
-
     def convert(self) -> str:
         context = font_context_stack[-1]
 
@@ -88,20 +86,24 @@ class ASTLiteral(ASTNode):
             variants = character_font_variants.get(basechar, [])
             conversion = ""
 
-            for v in variants:
-                if (v.is_bold == context.is_bold
-                        and v.is_double_struck == context.is_double_struck
-                        and v.is_fraktur == context.is_fraktur
-                        and v.is_italic == context.is_italic
-                        # and v.is_mathematical == context.is_mathematical
-                        and v.is_script == context.is_script):
-                    conversion = v.text
-                    break
-                    # TODO: Fail if no variant found
+            variant_candidates = [x for x in variants if (
+                x.is_bold == context.is_bold
+                and x.is_double_struck == context.is_double_struck
+                and x.is_fraktur == context.is_fraktur
+                and x.is_italic == context.is_italic
+                and x.is_sans_serif == context.is_sans_serif
+                and x.is_script == context.is_script
+            )]
 
-            if not conversion:
+            if not variant_candidates:
                 print(f"No conversion found for {basechar} with context {context}")
                 conversion = basechar
+            else:
+                # Prefer mathematical variants, if they exist. Otherwise just choose the first
+                conversion = next(
+                    (x for x in variant_candidates if x.is_mathematical),
+                    variant_candidates[0]
+                ).text
 
             output += conversion
 
