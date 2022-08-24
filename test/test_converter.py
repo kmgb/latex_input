@@ -30,6 +30,8 @@ class TestConverter(unittest.TestCase):
             "\\i{italictext}":      "𝑖𝑡𝑎𝑙𝑖𝑐𝑡𝑒𝑥𝑡",
             "\\bi{bolditalic}":     "𝒃𝒐𝒍𝒅𝒊𝒕𝒂𝒍𝒊𝒄",
             "\\ib{italicbold}":     "𝒊𝒕𝒂𝒍𝒊𝒄𝒃𝒐𝒍𝒅",
+            "\\i{italic\b{bold}}":  "𝑖𝑡𝑎𝑙𝑖𝑐𝒃𝒐𝒍𝒅",
+            "\\i{italic}\b{bold}":  "𝑖𝑡𝑎𝑙𝑖𝑐𝐛𝐨𝐥𝐝",
             "\\ib{}":               "",
 
             # Broken inputs

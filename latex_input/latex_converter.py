@@ -21,7 +21,7 @@ def latex_to_unicode(tex) -> str:
 
 def _map_text(mapping: dict[str, str], text: str) -> str:
     # Iterate all characters in text and convert them using map
-    return "".join([mapping[c] for c in text])
+    return "".join([mapping.get(c, c) for c in text])
 
 
 def to_superscript_form(t: str) -> str:
@@ -82,7 +82,7 @@ class ASTLiteral(ASTNode):
 
         output = ""
         for basechar in self.text:
-            variants = character_font_variants[basechar]
+            variants = character_font_variants.get(basechar, [])
             conversion = ""
 
             for v in variants:
@@ -97,7 +97,10 @@ class ASTLiteral(ASTNode):
                     break
                     # TODO: Fail if no variant found
 
-            assert conversion, f"No conversion found for {basechar} with context {context}"
+            if not conversion:
+                print(f"No conversion found for {basechar} with context {context}")
+                conversion = basechar
+
             output += conversion
 
         return output
@@ -111,11 +114,11 @@ class LatexRDescentParser:
     Macro   -> (\Text|^|_){Expr} | ^Char | _Char
     BSItem  -> \Text
     Text    -> Char+
-    Char    -> [a-zA-Z0-9 ]
+    Char    -> (?:[a-zA-Z0-9 \!@]|(?:\\[\\\^_\{}]))
     """
     expression = ""
     index = 0
-    char_regex = "[a-zA-Z0-9 ]"
+    char_regex = r"(?:[a-zA-Z0-9 \!]|(?:\\[\\\^_\{}]))"
     text_regex = char_regex + "+"
 
     def parse(self, expression) -> ASTLatex:
