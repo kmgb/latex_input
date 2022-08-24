@@ -118,8 +118,8 @@ class LatexRDescentParser:
     """
     expression = ""
     index = 0
-    char_regex = r"(?:[a-zA-Z0-9 \!]|(?:\\[\\\^_\{}]))"
-    text_regex = char_regex + "+"
+    char_regex = re.compile(r"(?:[a-zA-Z0-9 \!]|(?:\\[\\\^_\{}]))")
+    text_regex = re.compile(r"(?:[a-zA-Z0-9 \!]|(?:\\[\\\^_\{}]))+")
 
     def parse(self, expression) -> ASTLatex:
         self.expression = expression
@@ -137,16 +137,34 @@ class LatexRDescentParser:
 
         return self.expression[self.index]
 
-    def consume(self, expr) -> str:
+    def try_consume(self, expr) -> str | None:
         m = re.match(expr, self.expression[self.index:])
-        assert m
+        if not m:
+            return None
 
         self.index += m.end()
 
         return m.group()
 
+    def consume(self, expr) -> str:
+        c = self.try_consume(expr)
+        assert c
+
+        return c
+
+    def try_consume_text(self) -> str | None:
+        c = self.try_consume(self.text_regex)
+
+        if c:
+            c = re.sub(r"\\(.)", r"\1", c)  # Remove escape backslashes
+
+        return c
+
     def consume_text(self) -> str:
-        return self.consume(self.text_regex)
+        text = self.try_consume_text()
+        assert text
+
+        return text
 
     def consume_char(self) -> str:
         return self.consume(self.char_regex)
@@ -154,6 +172,10 @@ class LatexRDescentParser:
     def _expr(self) -> ASTNode:
         if self.index >= len(self.expression):
             return ASTLiteral("")
+
+        text = self.try_consume_text()
+        if text:
+            return ASTLiteral(text)
 
         if self.peek() in ["\\", "^", "_"]:
             return self._macro()
