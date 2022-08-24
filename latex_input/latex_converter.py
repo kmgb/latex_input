@@ -21,8 +21,8 @@ class FontContext:
     def is_trivial(self) -> bool:
         return not (self.is_bold or self.is_double_struck or
                     self.is_fraktur or self.is_italic or
-                    self.is_script or self.is_subscript or
-                    self.is_superscript)
+                    self.is_sans_serif or self.is_script or
+                    self.is_subscript or self.is_superscript)
 
 
 # HACK: Global font context stack used for AST conversions

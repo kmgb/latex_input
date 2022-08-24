@@ -36,6 +36,9 @@ class TestConverter(unittest.TestCase):
             "\\i{italic\\b{bold}}": "𝑖𝑡𝑎𝑙𝑖𝑐𝒃𝒐𝒍𝒅",
             "\\i{italic}\\b{bold}": "𝑖𝑡𝑎𝑙𝑖𝑐𝐛𝐨𝐥𝐝",
             "\\ib{}":               "",
+            "\\b{\\phi\\pi}":       "𝛟𝛑",
+            "\\i{\\phi\\pi}":       "𝜙𝜋",
+            "\\bi{\\phi\\pi}":      "𝝓𝝅",
 
             # Combinations
             "\\i{\\mathbb{Easy}}":      "𝔼𝕒𝕤𝕪",  # Note: i has no effect
