@@ -79,17 +79,19 @@ class ASTLiteral(ASTNode):
     def convert(self) -> str:
         context = font_context_stack[-1]
 
+        text = self.perform_character_replacements()
+
         if context.is_trivial():
-            return self.text
+            return text
 
         if context.is_superscript:
-            return to_superscript_form(self.text)
+            return to_superscript_form(text)
 
         elif context.is_subscript:
-            return to_subscript_form(self.text)
+            return to_subscript_form(text)
 
         output = ""
-        for basechar in self.text:
+        for basechar in text:
             variants = character_font_variants.get(basechar, [])
             conversion = ""
 
@@ -116,6 +118,31 @@ class ASTLiteral(ASTNode):
 
         return output
 
+    def perform_character_replacements(self) -> str:
+        text = self.text
+
+        # Dashes
+        # FIXME: Text-mode only
+        text = text.replace("---", "\u2014")  # Three dash -> Em dash
+        text = text.replace("--", "\u2013")   # Two dash -> En dash
+        # FIXME: Math-mode only
+        text = text.replace("-", "\u2212")    # One dash -> Minus sign
+
+        # Quotes to Lagrange's notation
+        # FIXME: Math-mode only
+        text = text.replace("''''", "\u2057")
+        text = text.replace("'''", "\u2034")
+        text = text.replace("''", "\u2033")
+        text = text.replace("'", "\u2032")
+
+        # Misc
+        # TODO: Is this preferred anyways? Causes weird rendering for some applications
+        # for example, browsers render 2/3 in a good way, others break
+        # FIXME: Math-mode only
+        text = text.replace("/", "\u2044")
+
+        return text
+
 
 class LatexRDescentParser:
     r"""
@@ -129,8 +156,8 @@ class LatexRDescentParser:
     """
     expression = ""
     index = 0
-    char_regex = re.compile(r"(?:[a-zA-Z0-9 =\!]|(?:\\[\\\^_\{}]))")
-    text_regex = re.compile(r"(?:[a-zA-Z0-9 =\!]|(?:\\[\\\^_\{}]))+")
+    char_regex = re.compile(r"(?:[a-zA-Z0-9 =\!\-+\()\[\]<>/]|(?:\\[\\\^_\{}]))")
+    text_regex = re.compile(r"(?:[a-zA-Z0-9 =\!\-+\()\[\]<>/]|(?:\\[\\\^_\{}]))+")
 
     def parse(self, expression) -> ASTLatex:
         self.expression = expression
@@ -299,16 +326,6 @@ class ASTFunction(ASTNode):
         return new_operand
 
 
-# TODO: Replace some symbols not preceded by backslash:
-# > -> >
-# < -> <
-# / -> ⁄
-# ' -> ′
-# '' -> ″
-# ''' -> ‴
-# '''' -> ⁗
-
-
 latex_charlist = {
     # Greek letters
     "Alpha":    "\u0391",
@@ -322,14 +339,14 @@ latex_charlist = {
     "Iota":     "\u0399",
     "Kappa":    "\u039A",
     "Lambda":   "\u039B",
-    "M":        "\u039C",
-    "N":        "\u039D",
+    "Mu":       "\u039C",
+    "Nu":       "\u039D",
     "Xi":       "\u039E",
     "Omicron":  "\u039F",
     "Pi":       "\u03A0",
     "Rho":      "\u03A1",
     "Sigma":    "\u03A3",
-    "Ta":       "\u03A4",
+    "Tau":      "\u03A4",
     "Upsilon":  "\u03A5",
     "Phi":      "\u03A6",
     "Chi":      "\u03A7",
@@ -346,14 +363,14 @@ latex_charlist = {
     "iota":     "\u03B9",
     "kappa":    "\u03BA",
     "lambda":   "\u03BB",
-    "m":        "\u03BC",
-    "n":        "\u03BD",
+    "mu":       "\u03BC",
+    "nu":       "\u03BD",
     "xi":       "\u03BE",
     "omicron":  "\u03BF",
     "pi":       "\u03C0",
     "rho":      "\u03C1",
     "sigma":    "\u03C3",
-    "ta":       "\u03C4",
+    "tau":      "\u03C4",
     "upsilon":  "\u03C5",
     "phi":      "\u03D5",  # NOTE: This is the closed form by default. Varphi is the open form
     "chi":      "\u03C7",

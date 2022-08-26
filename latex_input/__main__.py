@@ -5,8 +5,8 @@ import keyboard
 import sys
 import time
 
-from .listener import KeyListener
-from .latex_converter import latex_to_unicode, FontContext
+from latex_input.listener import KeyListener
+from latex_input.latex_converter import latex_to_unicode, FontContext
 
 APP_NAME: Final[str] = "LaTeX Input"
 APP_ICON_FILE: Final[str] = "./icon.ico"

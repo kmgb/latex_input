@@ -1,4 +1,3 @@
-import time
 from latex_input.latex_converter import latex_to_unicode
 
 import unittest
@@ -17,6 +16,8 @@ class TestConverter(unittest.TestCase):
             "^{ab}":    "ᵃᵇ",
             "r^e^{al} _t_{al}_{k}": "rᵉᵃˡ ₜₐₗₖ",
             "^{abcdefghijklmnopqrstuvwxyz0123456789}": "ᵃᵇᶜᵈᵉᶠᵍʰⁱʲᵏˡᵐⁿᵒᵖ𐞥ʳˢᵗᵘᵛʷˣʸᶻ⁰¹²³⁴⁵⁶⁷⁸⁹",
+            "^{ABDEGHIJKLMNOPRTUVW}": "ᴬᴮᴰᴱᴳᴴᴵᴶᴷᴸᴹᴺᴼᴾᴿᵀᵁⱽᵂ",
+            "^{(=)+-}": "⁽⁼⁾⁺⁻",
             "^{}":      "",
             "_{}":      "",
 

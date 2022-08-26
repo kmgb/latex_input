@@ -21,6 +21,9 @@ superscript_mapping = dict[str, str]()
 character_font_variants = dict[str, list[CharacterFontVariant]]()
 
 
+# TODO: Fix finding superscript alpha, iota, epsilon
+# Their fallbacks are listed as the "Latin" variants, meaning they aren't found
+# when looking for ^{\alpha} as it looks for the Greek variants
 with open("./UnicodeData.txt", encoding="utf-8") as f:
     for line in f:
         fields = line.split(";")
