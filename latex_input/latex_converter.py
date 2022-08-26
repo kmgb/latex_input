@@ -58,6 +58,10 @@ def to_subscript_form(t: str) -> str:
     return _map_text(subscript_mapping, t)
 
 
+def intersperse_characters(subject: str, intersperse: str) -> str:
+    return "".join([x + intersperse for x in subject])
+
+
 @dataclass
 class ASTNode:
     def convert(self) -> str:
@@ -284,6 +288,24 @@ class ASTFunction(ASTNode):
 
         elif self.name == "vec":
             return operand + u'\u20d7'
+
+        elif self.name == "sqrt":
+            return "√" + intersperse_characters(operand, "\u0305")
+
+        # TODO: Properly support \sqrt[\phi]{...}
+        elif m := re.match(r"sqrt\[(.*)\]", self.name):
+            param = m.group(1)
+            symbol = "√"
+            prefix = ""
+
+            if param == "3":
+                symbol = "∛"
+            elif param == "4":
+                symbol = "∜"
+            else:
+                prefix = to_superscript_form(param)
+
+            return prefix + symbol + intersperse_characters(operand, "\u0305")
 
         # TODO: More scalable approach to fixing conflicts
         elif self.name == "mathbb":
