@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import re
 
 from latex_input.unicode_data import (
-    superscript_mapping, subscript_mapping, character_font_variants, latex_symbol_list
+    superscript_mapping, subscript_mapping, character_font_variants, latex_symbols
 )
 
 
@@ -262,8 +262,8 @@ class ASTSymbol(ASTNode):
     name: str
 
     def convert(self) -> str:
-        assert self.name in latex_symbol_list, "Unsupported symbol"
-        basechar = latex_symbol_list[self.name]
+        assert self.name in latex_symbols, "Unsupported symbol"
+        basechar = latex_symbols[self.name]
 
         return ASTLiteral(basechar).convert()
 

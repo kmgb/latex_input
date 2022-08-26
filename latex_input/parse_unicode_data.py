@@ -5,14 +5,14 @@ import typing
 @dataclass
 class CharacterFontVariant:
     text: str
-    is_bold: bool
-    is_double_struck: bool
-    is_fraktur: bool
-    is_italic: bool
-    is_mathematical: bool
-    is_monospace: bool
-    is_sans_serif: bool
-    is_script: bool
+    is_bold: bool = False
+    is_double_struck: bool = False
+    is_fraktur: bool = False
+    is_italic: bool = False
+    is_mathematical: bool = False
+    is_monospace: bool = False
+    is_sans_serif: bool = False
+    is_script: bool = False
 
 
 subscript_mapping = dict[str, str]()
