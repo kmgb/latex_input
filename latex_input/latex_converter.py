@@ -13,6 +13,7 @@ class FontContext:
     is_double_struck: bool = False
     is_fraktur: bool = False
     is_italic: bool = False
+    is_monospace: bool = False
     is_sans_serif: bool = False
     is_script: bool = False
     is_subscript: bool = False
@@ -21,6 +22,7 @@ class FontContext:
     def is_trivial(self) -> bool:
         return not (self.is_bold or self.is_double_struck or
                     self.is_fraktur or self.is_italic or
+                    self.is_monospace or
                     self.is_sans_serif or self.is_script or
                     self.is_subscript or self.is_superscript)
 
@@ -104,6 +106,7 @@ class ASTLiteral(ASTNode):
                 and x.is_double_struck == context.is_double_struck
                 and x.is_fraktur == context.is_fraktur
                 and x.is_italic == context.is_italic
+                and x.is_monospace == context.is_monospace
                 and x.is_sans_serif == context.is_sans_serif
                 and x.is_script == context.is_script
             )]
@@ -143,7 +146,7 @@ class ASTLiteral(ASTNode):
         # TODO: Is this preferred anyways? Causes weird rendering for some applications
         # for example, browsers render 2/3 in a good way, others break
         # FIXME: Math-mode only
-        text = text.replace("/", "\u2044")
+        # text = text.replace("/", "\u2044")
 
         return text
 
@@ -279,12 +282,10 @@ class ASTFunction(ASTNode):
         new_context = copy.copy(current_context)
 
         if self.name == "^":
-            new_context = FontContext()
-            new_context.is_superscript = True
+            new_context = FontContext(is_superscript=True)
 
         elif self.name == "_":
-            new_context = FontContext()
-            new_context.is_subscript = True
+            new_context = FontContext(is_subscript=True)
 
         elif self.name == "vec":
             return operand + u'\u20d7'
@@ -321,23 +322,29 @@ class ASTFunction(ASTNode):
             new_context.is_fraktur = True
             new_context.is_italic = False  # Italic Fraktur variants don't exist
 
+        elif self.name == "s":
+            new_context = FontContext(is_sans_serif=True)
+
+        elif self.name == "m":
+            new_context = FontContext(is_monospace=True)
+
         # HACK: Shorthands
-        elif self.name == "b":
-            new_context.is_bold = True
-            new_context.is_double_struck = False  # Bold doublestruck doesn't exist
+        elif all(c in "ibs" for c in self.name):
+            if "b" in self.name:
+                new_context.is_bold = True
+                new_context.is_double_struck = False  # Bold doublestruck doesn't exist
 
-        elif self.name == "i":
-            new_context.is_italic = True
-            new_context.is_fraktur = False  # Italic Fraktur doesn't exist
-            new_context.is_script = False  # Italic script doesn't exist
-            new_context.is_double_struck = False  # Bold doublestruck doesn't exist
+            if "i" in self.name:
+                new_context.is_italic = True
+                new_context.is_fraktur = False  # Italic Fraktur doesn't exist
+                new_context.is_script = False  # Italic script doesn't exist
+                new_context.is_double_struck = False  # Italic doublestruck doesn't exist
 
-        elif self.name == "bi" or self.name == "ib":
-            new_context.is_bold = True
-            new_context.is_italic = True
-            new_context.is_double_struck = False  # Bold doublestruck doesn't exist
-            new_context.is_fraktur = False  # Italic Fraktur doesn't exist
-            new_context.is_script = False  # Italic script doesn't exist
+            if "s" in self.name:
+                new_context.is_sans_serif = True
+                new_context.is_fraktur = False
+                new_context.is_script = False
+                new_context.is_double_struck = False
 
         else:
             assert False, "Function not implemented"

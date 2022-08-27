@@ -55,6 +55,18 @@ class TestConverter(unittest.TestCase):
             "\\mathfrak{\\b{Hard}}":    "𝕳𝖆𝖗𝖉",
             "\\mathfrak{\\i{Hard}}":    "𝐻𝑎𝑟𝑑",  # Note: mathfrak has no effect
 
+            "\\mathbb{0123456789}":     "𝟘𝟙𝟚𝟛𝟜𝟝𝟞𝟟𝟠𝟡",
+            "\\b{0123456789}":          "𝟎𝟏𝟐𝟑𝟒𝟓𝟔𝟕𝟖𝟗",
+            "\\m{0123456789}":          "𝟶𝟷𝟸𝟹𝟺𝟻𝟼𝟽𝟾𝟿",
+            "\\s{0123456789}":          "𝟢𝟣𝟤𝟥𝟦𝟧𝟨𝟩𝟪𝟫",
+            "\\sb{0123456789}":         "𝟬𝟭𝟮𝟯𝟰𝟱𝟲𝟳𝟴𝟵",
+            "\\m{abcdefghijklmnopqrstuvwxyz}":  "𝚊𝚋𝚌𝚍𝚎𝚏𝚐𝚑𝚒𝚓𝚔𝚕𝚖𝚗𝚘𝚙𝚚𝚛𝚜𝚝𝚞𝚟𝚠𝚡𝚢𝚣",
+            "\\m{ABCDEFGHIJKLMNOPQRSTUVWXYZ}":  "𝙰𝙱𝙲𝙳𝙴𝙵𝙶𝙷𝙸𝙹𝙺𝙻𝙼𝙽𝙾𝙿𝚀𝚁𝚂𝚃𝚄𝚅𝚆𝚇𝚈𝚉",
+            "\\s{abcdefghijklmnopqrstuvwxyz}":  "𝖺𝖻𝖼𝖽𝖾𝖿𝗀𝗁𝗂𝗃𝗄𝗅𝗆𝗇𝗈𝗉𝗊𝗋𝗌𝗍𝗎𝗏𝗐𝗑𝗒𝗓",
+            "\\s{ABCDEFGHIJKLMNOPQRSTUVWXYZ}":  "𝖠𝖡𝖢𝖣𝖤𝖥𝖦𝖧𝖨𝖩𝖪𝖫𝖬𝖭𝖮𝖯𝖰𝖱𝖲𝖳𝖴𝖵𝖶𝖷𝖸𝖹",
+            "\\sb{abcdefghijklmnopqrstuvwxyz}": "𝗮𝗯𝗰𝗱𝗲𝗳𝗴𝗵𝗶𝗷𝗸𝗹𝗺𝗻𝗼𝗽𝗾𝗿𝘀𝘁𝘂𝘃𝘄𝘅𝘆𝘇",
+            "\\sb{ABCDEFGHIJKLMNOPQRSTUVWXYZ}": "𝗔𝗕𝗖𝗗𝗘𝗙𝗚𝗛𝗜𝗝𝗞𝗟𝗠𝗡𝗢𝗣𝗤𝗥𝗦𝗧𝗨𝗩𝗪𝗫𝗬𝗭",
+
             # Escapes
             "\\{":              "{",
             "\\}":              "}",
