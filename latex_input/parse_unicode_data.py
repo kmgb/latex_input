@@ -1,18 +1,23 @@
 from dataclasses import dataclass
+from enum import IntFlag, auto
 import typing
+
+
+class FontVariantType(IntFlag):
+    BOLD = auto()
+    DOUBLE_STRUCK = auto()
+    FRAKTUR = auto()
+    ITALIC = auto()
+    MATHEMATICAL = auto()
+    MONOSPACE = auto()
+    SANS_SERIF = auto()
+    SCRIPT = auto()
 
 
 @dataclass
 class CharacterFontVariant:
     text: str
-    is_bold: bool = False
-    is_double_struck: bool = False
-    is_fraktur: bool = False
-    is_italic: bool = False
-    is_mathematical: bool = False
-    is_monospace: bool = False
-    is_sans_serif: bool = False
-    is_script: bool = False
+    kind: FontVariantType
 
 
 subscript_mapping = dict[str, str]()
@@ -66,14 +71,14 @@ with open("./UnicodeData.txt", encoding="utf-8") as f:
             elif map_type == "<font>":
                 variant = CharacterFontVariant(
                     char,
-                    is_mathematical="MATHEMATICAL" in name,
-                    is_bold="BOLD" in name,
-                    is_double_struck="DOUBLE-STRUCK" in name,
-                    is_fraktur=any(x in name for x in ["FRAKTUR", "BLACK-LETTER"]),
-                    is_italic="ITALIC" in name,
-                    is_monospace="MONOSPACE" in name,
-                    is_sans_serif="SANS-SERIF" in name,
-                    is_script="SCRIPT" in name,
+                    FontVariantType.MATHEMATICAL * ("MATHEMATICAL" in name)
+                    | FontVariantType.BOLD * ("BOLD" in name)
+                    | FontVariantType.DOUBLE_STRUCK * ("DOUBLE-STRUCK" in name)
+                    | FontVariantType.FRAKTUR * (any(x in name for x in ["FRAKTUR", "BLACK-LETTER"]))
+                    | FontVariantType.ITALIC * ("ITALIC" in name)
+                    | FontVariantType.MONOSPACE * ("MONOSPACE" in name)
+                    | FontVariantType.SANS_SERIF * ("SANS-SERIF" in name)
+                    | FontVariantType.SCRIPT * ("SCRIPT" in name)
                 )
 
                 character_font_variants.setdefault(basechar, []).append(variant)

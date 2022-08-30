@@ -1,5 +1,6 @@
 from latex_input.parse_unicode_data import (
-    CharacterFontVariant, character_font_variants, subscript_mapping, superscript_mapping
+    CharacterFontVariant, FontVariantType,
+    character_font_variants, subscript_mapping, superscript_mapping
 )
 
 # Manual fixes
@@ -10,7 +11,10 @@ superscript_mapping["ϕ"] = "ᶲ"
 
 # Planck's constant already fulfills this role, but isn't detected
 character_font_variants["h"].append(
-    CharacterFontVariant(text="\u210E", is_italic=True, is_mathematical=True)
+    CharacterFontVariant(
+        text="\u210E",
+        kind=FontVariantType.ITALIC | FontVariantType.MATHEMATICAL
+    )
 )
 
 latex_symbols: dict[str, str] = {

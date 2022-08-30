@@ -2,6 +2,8 @@ import copy
 from dataclasses import dataclass
 import re
 
+from latex_input.parse_unicode_data import FontVariantType
+
 from latex_input.unicode_data import (
     superscript_mapping, subscript_mapping, character_font_variants, latex_symbols
 )
@@ -9,21 +11,12 @@ from latex_input.unicode_data import (
 
 @dataclass
 class FontContext:
-    is_bold: bool = False
-    is_double_struck: bool = False
-    is_fraktur: bool = False
-    is_italic: bool = False
-    is_monospace: bool = False
-    is_sans_serif: bool = False
-    is_script: bool = False
+    formatting: FontVariantType = 0
     is_subscript: bool = False
     is_superscript: bool = False
 
     def is_trivial(self) -> bool:
-        return not (self.is_bold or self.is_double_struck or
-                    self.is_fraktur or self.is_italic or
-                    self.is_monospace or
-                    self.is_sans_serif or self.is_script or
+        return not (self.formatting or
                     self.is_subscript or self.is_superscript)
 
 
@@ -101,23 +94,19 @@ class ASTLiteral(ASTNode):
             variants = character_font_variants.get(basechar, [])
             conversion = ""
 
-            variant_candidates = [x for x in variants if (
-                x.is_bold == context.is_bold
-                and x.is_double_struck == context.is_double_struck
-                and x.is_fraktur == context.is_fraktur
-                and x.is_italic == context.is_italic
-                and x.is_monospace == context.is_monospace
-                and x.is_sans_serif == context.is_sans_serif
-                and x.is_script == context.is_script
+            # Narrow down candidates to those matching the desired formatting
+            # ignoring mathematical parameter, as that is not specified by the user
+            variant_candidates = [v for v in variants if (
+                context.formatting == v.kind & ~(FontVariantType.MATHEMATICAL)
             )]
 
             if not variant_candidates:
-                print(f"No conversion found for {basechar} with context {context}")
+                print(f"No conversion found for '{basechar}' with context {context}")
                 conversion = basechar
             else:
                 # Prefer mathematical variants, if they exist. Otherwise just choose the first
                 conversion = next(
-                    (x for x in variant_candidates if x.is_mathematical),
+                    (x for x in variant_candidates if x.kind & FontVariantType.MATHEMATICAL),
                     variant_candidates[0]
                 ).text
 
@@ -163,8 +152,8 @@ class LatexRDescentParser:
     """
     expression = ""
     index = 0
-    char_regex = re.compile(r"(?:[a-zA-Z0-9 =\!\-+\()\[\]<>/]|(?:\\[\\\^_\{}]))")
-    text_regex = re.compile(r"(?:[a-zA-Z0-9 =\!\-+\()\[\]<>/]|(?:\\[\\\^_\{}]))+")
+    char_regex = re.compile(r"(?:[a-zA-Z0-9 =\!\-+\()\[\]<>/'\"]|(?:\\[\\\^_\{}]))")
+    text_regex = re.compile(r"(?:[a-zA-Z0-9 =\!\-+\()\[\]<>/'\"]|(?:\\[\\\^_\{}]))+")
 
     def parse(self, expression) -> ASTLatex:
         self.expression = expression
@@ -310,41 +299,44 @@ class ASTFunction(ASTNode):
 
         # TODO: More scalable approach to fixing conflicts
         elif self.name == "mathbb":
-            new_context.is_double_struck = True
-            new_context.is_italic = False  # Italic doublestruck variants don't exist
-            new_context.is_bold = False  # Bold doublestruck variants don't exist
+            new_context.formatting |= FontVariantType.DOUBLE_STRUCK
+            new_context.formatting &= ~(FontVariantType.ITALIC | FontVariantType.BOLD)
 
         elif self.name == "mathcal":
-            new_context.is_script = True
-            new_context.is_italic = False  # Italic script variants don't exist
+            new_context.formatting |= FontVariantType.SCRIPT
+            new_context.formatting &= ~FontVariantType.ITALIC
 
         elif self.name == "mathfrak":
-            new_context.is_fraktur = True
-            new_context.is_italic = False  # Italic Fraktur variants don't exist
+            new_context.formatting |= FontVariantType.FRAKTUR
+            new_context.formatting &= ~FontVariantType.ITALIC
 
         elif self.name == "s":
-            new_context = FontContext(is_sans_serif=True)
+            new_context = FontContext(formatting=FontVariantType.SANS_SERIF)
 
         elif self.name == "m":
-            new_context = FontContext(is_monospace=True)
+            new_context = FontContext(formatting=FontVariantType.MONOSPACE)
 
         # HACK: Shorthands
-        elif all(c in "ibs" for c in self.name):
+        elif all(c in "bis" for c in self.name):
             if "b" in self.name:
-                new_context.is_bold = True
-                new_context.is_double_struck = False  # Bold doublestruck doesn't exist
+                new_context.formatting |= FontVariantType.BOLD
+                new_context.formatting &= ~FontVariantType.DOUBLE_STRUCK
 
             if "i" in self.name:
-                new_context.is_italic = True
-                new_context.is_fraktur = False  # Italic Fraktur doesn't exist
-                new_context.is_script = False  # Italic script doesn't exist
-                new_context.is_double_struck = False  # Italic doublestruck doesn't exist
+                new_context.formatting |= FontVariantType.ITALIC
+                new_context.formatting &= ~(
+                    FontVariantType.FRAKTUR
+                    | FontVariantType.SCRIPT
+                    | FontVariantType.DOUBLE_STRUCK
+                )
 
             if "s" in self.name:
-                new_context.is_sans_serif = True
-                new_context.is_fraktur = False
-                new_context.is_script = False
-                new_context.is_double_struck = False
+                new_context.formatting |= FontVariantType.SANS_SERIF
+                new_context.formatting &= ~(
+                    FontVariantType.FRAKTUR
+                    | FontVariantType.SCRIPT
+                    | FontVariantType.DOUBLE_STRUCK
+                )
 
         else:
             assert False, "Function not implemented"
