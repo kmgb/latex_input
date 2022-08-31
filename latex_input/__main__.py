@@ -22,7 +22,7 @@ KEYPRESS_DELAY: Final[float] = 0.002
 listener = KeyListener()
 tray_icon: QtWidgets.QSystemTrayIcon
 use_key_delay = True
-is_math_mode = True
+is_math_mode = False
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -59,9 +59,9 @@ def main():
         # TODO: Load from preferences file
         pass
 
-    elif not args.math_mode:
+    elif args.math_mode:
         global is_math_mode
-        is_math_mode = False
+        is_math_mode = True
 
     setup_hotkeys()
     print(f"{APP_NAME} started")
