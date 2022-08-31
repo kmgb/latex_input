@@ -7,9 +7,11 @@ import time
 
 from latex_input.listener import KeyListener
 from latex_input.latex_converter import latex_to_unicode, FontContext
+from latex_input.parse_unicode_data import FontVariantType
 
 APP_NAME: Final[str] = "LaTeX Input"
 APP_ICON_FILE: Final[str] = "./icon.ico"
+APP_ACTIVATED_ICON_FILE: Final[str] = "./icon_activated.ico"
 TEXT_EDIT_FONTSIZE: Final[int] = 12
 
 # Necessary, as some applications will process keystrokes out
@@ -18,6 +20,7 @@ TEXT_EDIT_FONTSIZE: Final[int] = 12
 KEYPRESS_DELAY: Final[float] = 0.002
 
 listener = KeyListener()
+tray_icon: QtWidgets.QSystemTrayIcon
 use_key_delay = True
 is_math_mode = True
 
@@ -72,35 +75,72 @@ def main():
 def setup_hotkeys():
     # We use CapsLock as a modifier key for the hotkey, so we should
     # disable capslock functionality
-    # TODO: Disable capslock when the script starts
-    keyboard.add_hotkey("capslock+s", activation_callback, suppress=True)
+    # TODO: Disable capslock when the script start
+    # suppress=True prevents the "s" in the hotkey from appearing in text fields
+    # but we still end up capturing the "s" press in the listener
+    # Call_later fixes this without having to wait until the user releases the keys
+    # to activate (trigger_on_release), which would be bad UX.
+    keyboard.add_hotkey(
+        "capslock+s",
+        lambda: keyboard.call_later(activate_listener),
+        suppress=True,
+        # trigger_on_release=True
+    )
     keyboard.block_key("capslock")
 
     keyboard.add_hotkey("space", accept_callback)
-    keyboard.add_hotkey("escape", cancel_callback)
+    keyboard.add_hotkey("escape", cancel_listener)
 
 
-def activation_callback():
-    listener.start_listening()
+def activate_listener(text=""):
+    """
+    Start listening to global keystrokes, adds `text` to the
+    beginning of the listening buffer.
+    """
+    print("Starting listening")
+    listener.start_listening(text)
+
+    if tray_icon:
+        tray_icon.setIcon(QtGui.QIcon(APP_ACTIVATED_ICON_FILE))
 
 
 def accept_callback():
-    text = listener.stop_listening()
-
-    if text.startswith("s"):
-        text = text[1:]  # Remove the activation character
+    listened_text = listener.stop_listening()
+    print(f"Listened text: '{listened_text}'")
+    text = listened_text
 
     if not text:
         return
 
-    translated_text = latex_to_unicode(text, FontContext(is_italic=is_math_mode))
+    translated_text = latex_to_unicode(
+        text,
+        FontContext(formatting=FontVariantType.ITALIC if is_math_mode else 0)
+    )
+
+    # Restart the listener with the original text if the translation failed
+    if not translated_text:
+        print(f"Failed conversion, re-listening with text {listened_text}")
+        activate_listener(listened_text)
+        return
 
     # Press backspace to delete the entered LaTeX
-    num_backspace = len(text) + 1  # +1 for space
+    num_backspace = len(listened_text) + 1  # +1 for space character
     write_with_delay("\b" * num_backspace, delay=use_key_delay * KEYPRESS_DELAY)
 
-    print(f"Writing: {translated_text}")
+    print(f"Writing: '{translated_text}'")
     write_with_delay(translated_text, delay=use_key_delay * KEYPRESS_DELAY)
+
+    # Continue listening
+    # HACK: The call_later is to fix consecutive `accept_callback`s from picking up
+    # the <space> from the previous call.
+    keyboard.call_later(activate_listener)
+
+
+def cancel_listener():
+    listener.stop_listening()
+
+    if tray_icon:
+        tray_icon.setIcon(QtGui.QIcon(APP_ICON_FILE))
 
 
 def write_with_delay(text: str, delay: float):
@@ -119,10 +159,6 @@ def write_with_delay(text: str, delay: float):
         # which doesn't have good time accurancy until Python 3.11
         keyboard.write(c)
         accurate_delay(delay)
-
-
-def cancel_callback():
-    listener.stop_listening()
 
 
 class SystemTrayIcon(QtWidgets.QSystemTrayIcon):
@@ -149,15 +185,22 @@ class SystemTrayIcon(QtWidgets.QSystemTrayIcon):
 
 
 def run_gui():
+    global tray_icon
+
     app = QtWidgets.QApplication(sys.argv)
     window = QtWidgets.QWidget()
     window.setWindowIcon(QtGui.QIcon(APP_ICON_FILE))
     window.setWindowTitle(APP_NAME)
     layout = QtWidgets.QVBoxLayout(window)
     layout.addWidget(QtWidgets.QLabel(
-        "Press <b>CapsLock+s</b> to enter input mode. Enter your desired LaTeX,"
-        "then press <b>space</b> to translate the text and exit input mode."
-        "<br>Try it in the text box below."))
+        "How to use:"
+        "<ol>"
+        "<li>Press <b>CapsLock+S</b> to enter input mode</li>"
+        "<li>Enter your desired LaTeX</li>"
+        "<li>Press <b>Space</b> to translate the text</li>"
+        "<li>Press <b>Esc</b> to exit input mode</li>"
+        "</ol>"
+        "Try it in the text box below:"))
     text_edit = QtWidgets.QTextEdit(window)
     text_edit_font = text_edit.font()
     text_edit_font.setPointSize(TEXT_EDIT_FONTSIZE)

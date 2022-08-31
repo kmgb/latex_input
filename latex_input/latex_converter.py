@@ -24,7 +24,7 @@ class FontContext:
 font_context_stack = list[FontContext]()
 
 
-def latex_to_unicode(tex, context=FontContext()) -> str:
+def latex_to_unicode(tex, context=FontContext()) -> str | None:
     parser = LatexRDescentParser()
 
     font_context_stack.append(context)
@@ -34,8 +34,8 @@ def latex_to_unicode(tex, context=FontContext()) -> str:
         print(result)
         return result.convert()
     except Exception as e:
-        print(f"Failed to convert {tex}, Error = {e}")
-        return "ERROR"
+        print(f"Failed to convert '{tex}', Error = {e}")
+        return None
     finally:
         font_context_stack.pop()
 
@@ -153,7 +153,8 @@ class LatexRDescentParser:
     expression = ""
     index = 0
     char_regex = re.compile(r"(?:[a-zA-Z0-9 =\!\-+\()\[\]<>/'\"]|(?:\\[\\\^_\{}]))")
-    text_regex = re.compile(r"(?:[a-zA-Z0-9 =\!\-+\()\[\]<>/'\"]|(?:\\[\\\^_\{}]))+")
+    text_regex = re.compile(char_regex.pattern + "+")
+    ident_regex = re.compile(char_regex.pattern.replace(" ", "") + "+")  # Remove space as option
 
     def parse(self, expression) -> ASTLatex:
         self.expression = expression
@@ -222,7 +223,7 @@ class LatexRDescentParser:
         single_char_mode = False
 
         if function == "\\":
-            function = self.consume_text()
+            function = self.consume(self.ident_regex)
 
         if function in ["^", "_"]:
             single_char_mode = True

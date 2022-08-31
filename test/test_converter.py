@@ -23,6 +23,7 @@ class TestConverter(unittest.TestCase):
 
             "\\epsilon\\varepsilon": "ϵε",
             "\\phi\\varphi": "ϕφ",
+            "\\lambda e": "λ e",  # TODO: When/if mathmode gets implemented, this should be 𝜆𝑒
 
             "\\mathbb{Easy}":       "𝔼𝕒𝕤𝕪",
             "\\mathcal{Medium}":    "ℳℯ𝒹𝒾𝓊𝓂",
@@ -72,18 +73,25 @@ class TestConverter(unittest.TestCase):
             "\\}":              "}",
             "\\{\\}":           "{}",
             "\\\\":             "\\",
+            "'":                "′",
+            "''":               "″",
+            "'''":              "‴",
+            "''''":             "⁗",
+            "-":                "−",  # Math minus
+            "--":               "–",  # En dash
+            "---":              "—",  # Em dash
 
             # Broken inputs
-            "_":                "ERROR",
-            "^":                "ERROR",
-            "^{7654":           "ERROR",
-            "_{7654":           "ERROR",
-            "\\var{abc":        "ERROR",
-            "\\invalid":        "ERROR",
-            "\\invalid{abc}":   "ERROR",
-            "\\invalid{}":      "ERROR",
-            "\\{}":             "ERROR",
-            "\\":               "ERROR",
+            "_":                None,
+            "^":                None,
+            "^{7654":           None,
+            "_{7654":           None,
+            "\\var{abc":        None,
+            "\\invalid":        None,
+            "\\invalid{abc}":   None,
+            "\\invalid{}":      None,
+            "\\{}":             None,
+            "\\":               None,
         }
 
         for k, v in tests.items():
