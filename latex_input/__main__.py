@@ -105,11 +105,16 @@ def activate_listener(text=""):
 
 
 def accept_callback():
+    if not listener.is_listening:
+        return
+
     listened_text = listener.stop_listening()
     print(f"Listened text: '{listened_text}'")
     text = listened_text
 
-    if not text:
+    # Continue listening, there was no data to translate
+    if len(listened_text) == 0 or listened_text == " ":
+        activate_listener()
         return
 
     translated_text = latex_to_unicode(
@@ -118,8 +123,10 @@ def accept_callback():
     )
 
     # Restart the listener with the original text if the translation failed
+    # Could be the user is still entering text that would make the translation work
+    # ie. `\mathbb{e asy}' fails at `\mathbb{e' but succeeds when complete.
     if not translated_text:
-        print(f"Failed conversion, re-listening with text {listened_text}")
+        print(f"Failed conversion, re-listening with text '{listened_text}'")
         activate_listener(listened_text)
         return
 
