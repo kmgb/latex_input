@@ -78,7 +78,8 @@ class ASTLiteral(ASTNode):
     def convert(self) -> str:
         context = font_context_stack[-1]
 
-        text = self.perform_character_replacements()
+        text = self.perform_character_replacements(self.text)
+        text = self.perform_character_spacing(text)
 
         if context.is_trivial():
             return text
@@ -114,9 +115,8 @@ class ASTLiteral(ASTNode):
 
         return output
 
-    def perform_character_replacements(self) -> str:
-        text = self.text
-
+    @staticmethod
+    def perform_character_replacements(text) -> str:
         # Dashes
         # FIXME: Text-mode only
         text = text.replace("---", "\u2014")  # Three dash -> Em dash
@@ -136,6 +136,22 @@ class ASTLiteral(ASTNode):
         # for example, browsers render 2/3 in a good way, others break
         # FIXME: Math-mode only
         # text = text.replace("/", "\u2044")
+
+        return text
+
+    @staticmethod
+    def perform_character_spacing(text):
+        thickmuskip = latex_symbols["thickmuskip"]
+        medmuskip = latex_symbols["medmuskip"]
+        # text.replace overlaps with this match causing infinite recursion
+
+        # Relational operator spacing
+        text = re.sub(r"([^=><])([=><])", "\\1" + thickmuskip + "\\2", text)
+        text = re.sub(r"([=><])([^=><])", "\\1" + thickmuskip + "\\2", text)
+
+        # Binary operator spacing
+        text = re.sub(r"([\+−×⋅])([^+−×⋅])", "\\1" + medmuskip + "\\2", text)
+        text = re.sub(r"([^+−×⋅])([\+−×⋅])", "\\1" + medmuskip + "\\2", text)
 
         return text
 
