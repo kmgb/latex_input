@@ -90,6 +90,12 @@ latex_symbols: dict[str, str] = {
     "R":            "\u211D",  # ℝ
     "Z":            "\u2124",  # ℤ
 
+    # Mathematical spacing symbols
+    # This combination of 4/18 + [1/16..1/10] is as close as it gets to the 5/18 em definition
+    "thickmuskip":  "\u205F\u200A",     # = \; = 5mu = 5/18em ≈ MEDIUM U+205F + HAIR SPACE U+200A
+    "medmuskip":    "\u205F",           # = \: = 4mu = 4/18em = MEDIUM MATHEMATICAL SPACE U+205F
+    "thinmuskip":   "\u2006",           # = \, = 3mu = 3/18em = 1/6em = SIX-PER-EM SPACE U+2006
+
     # Below are additions to the huge list on the bottom from
     # https://github.com/clarkgrubb/latex-input/blob/master/data/latex/unicode.txt
     "bigodot": "⊙",
