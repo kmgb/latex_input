@@ -7,7 +7,6 @@ import sys
 import time
 from latex_input.client_win import Client
 
-from latex_input.listener import KeyListener
 from latex_input.latex_converter import latex_to_unicode, FontContext
 from latex_input.parse_unicode_data import FontVariantType
 
@@ -21,7 +20,6 @@ TEXT_EDIT_FONTSIZE: Final[int] = 12
 # them at all.
 KEYPRESS_DELAY: Final[float] = 0.002
 
-listener = KeyListener()
 tray_icon: QtWidgets.QSystemTrayIcon
 use_key_delay = True
 is_math_mode = False
@@ -70,7 +68,7 @@ def main():
         on_activate=lambda: set_icon_state(True),
         on_deactivate=lambda: set_icon_state(False)
     )
-    client_thread = threading.Thread(target=client.run, daemon=True)
+    client_thread = threading.Thread(target=client.listen, daemon=True)
     client_thread.start()
 
     print(f"{APP_NAME} started")
@@ -90,30 +88,11 @@ def set_icon_state(activated: bool):
         ))
 
 
-def activate_listener(text=""):
-    """
-    Start listening to global keystrokes, adds `text` to the
-    beginning of the listening buffer.
-    """
-    print("Starting listening")
-    listener.start_listening(text)
-
-    if tray_icon:
-        tray_icon.setIcon(QtGui.QIcon(APP_ACTIVATED_ICON_FILE))
-
-
-def accept_callback():
-    if not listener.is_listening:
-        return
-
-    listened_text = listener.stop_listening()
-    print(f"Listened text: '{listened_text}'")
-    text = listened_text
-
+def accept_callback(text):
     # Continue listening, there was no data to translate
-    if len(listened_text) == 0 or listened_text == " ":
-        activate_listener()
-        return
+    # if len(listened_text) == 0 or listened_text == " ":
+    #     activate_listener()
+    #     return
 
     translated_text = latex_to_unicode(
         text,
@@ -124,12 +103,12 @@ def accept_callback():
     # Could be the user is still entering text that would make the translation work
     # ie. `\mathbb{e asy}' fails at `\mathbb{e' but succeeds when complete.
     if not translated_text:
-        print(f"Failed conversion, re-listening with text '{listened_text}'")
-        activate_listener(listened_text)
+        print(f"Failed conversion, re-listening with text '{text}'")
+        # activate_listener(listened_text)
         return
 
     # Press backspace to delete the entered LaTeX
-    num_backspace = len(listened_text) + 1  # +1 for space character
+    num_backspace = len(text) + 1  # +1 for space character
     write_with_delay("\b" * num_backspace, delay=use_key_delay * KEYPRESS_DELAY)
 
     print(f"Writing: '{translated_text}'")
@@ -138,14 +117,7 @@ def accept_callback():
     # Continue listening
     # HACK: The call_later is to fix consecutive `accept_callback`s from picking up
     # the <space> from the previous call.
-    keyboard.call_later(activate_listener)
-
-
-def cancel_listener():
-    listener.stop_listening()
-
-    if tray_icon:
-        tray_icon.setIcon(QtGui.QIcon(APP_ICON_FILE))
+    # keyboard.call_later(activate_listener)
 
 
 def write_with_delay(text: str, delay: float):

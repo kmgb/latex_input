@@ -1,10 +1,14 @@
+from typing import NoReturn
 import ahk
 import atexit
 
 ahk_wait_activation = r"""
 #NoTrayIcon
 CapsLock & s::
-ExitApp
+    ; Wait for CapsLock to be released
+    ; Otherwise this script exits before it can toggle CapsLock back off
+    KeyWait, CapsLock
+    ExitApp
 return
 """
 
@@ -12,7 +16,8 @@ ahk_listen_script = r"""
 #NoTrayIcon
 SendDeactivation()
 {
-    FileAppend, Chr(16)Chr(3), *, UTF-8  ; Send a special code to indicate the input was cancelled
+    var := Chr(16)Chr(3)
+    FileAppend, %var%, *, UTF-8  ; Send a special code to indicate the input was cancelled
 }
 
 Input, value, V, {Space}{Tab}{Esc}{LControl}{RControl}{LAlt}{RAlt}{LWin}{RWin}{AppsKey}{F1}{F2}{F3}{F4}{F5}{F6}{F7}{F8}{F9}{F10}{F11}{F12}{Left}{Right}{Up}{Down}{Home}{End}{PgUp}{PgDn}{Del}{Ins}{NumLock}{PrintScreen}{Pause}
@@ -45,7 +50,11 @@ class Client():
         self.on_deactivate = on_deactivate
         self.proc = None
 
-    def run(self):
+    def listen(self) -> NoReturn:
+        """
+        Listens for key activation and records written text.
+        Sends any written text to `on_accept`.
+        """
         # Special handling to kill any dangling AutoHotKey process when this
         # thread gets killed
         def kill_proc():
@@ -63,11 +72,11 @@ class Client():
             result = self._do_script(ahk_listen_script)
 
             # Data Link Escape + End of Text
-            if result == b"\x10\x03":
+            if result == "\x10\x03":
                 if self.on_deactivate:
                     self.on_deactivate()
             else:
-                print(f"Received data: {result}")
+                self.on_accept(result)
                 if self.on_deactivate:
                     self.on_deactivate()
 
@@ -77,4 +86,4 @@ class Client():
         self.proc = self.ahk.run_script(script, blocking=False)
         out, err = self.proc.communicate()
 
-        return out
+        return out.decode('utf-8')
