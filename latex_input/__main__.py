@@ -1,9 +1,12 @@
 import argparse
+import errno
+import threading
 from typing import Final
 from PyQt5 import QtGui, QtWidgets, QtCore
 import keyboard
 import sys
 import time
+import socket
 
 from latex_input.listener import KeyListener
 from latex_input.latex_converter import latex_to_unicode, FontContext
@@ -13,6 +16,7 @@ APP_NAME: Final[str] = "LaTeX Input"
 APP_ICON_FILE: Final[str] = "./icon.ico"
 APP_ACTIVATED_ICON_FILE: Final[str] = "./icon_activated.ico"
 TEXT_EDIT_FONTSIZE: Final[int] = 12
+LISTEN_PORT: Final[int] = 14739
 
 # Necessary, as some applications will process keystrokes out
 # of order if they arrive too quickly, or they won't process
@@ -63,13 +67,78 @@ def main():
         global is_math_mode
         is_math_mode = True
 
-    setup_hotkeys()
+    # setup_hotkeys()
     print(f"{APP_NAME} started")
 
+    # Start our listening socket, this runs in the background alongside the UI
+    socket_thread = threading.Thread(target=listen_to_socket, daemon=True)
+    socket_thread.start()
+
     if args.no_gui:
-        keyboard.wait()
+        socket_thread.join()
     else:
         run_gui()
+
+
+def listen_to_socket():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    # NEVER use "" or "0.0.0.0", that would potentially expose this application to the
+    # internet, allowing people to type on this computer.
+    s.bind(("localhost", LISTEN_PORT))
+    s.listen(5)
+
+    while True:
+        (clientsocket, address) = s.accept()
+        print(f"Connected to client")
+        client_thread = threading.Thread(target=run_client, args=(clientsocket,), daemon=True)
+        client_thread.start()
+        client_thread.join()  # Only one client at a time
+
+
+def recv_all(s: socket.socket) -> bytes:
+    ret: bytes = []
+
+    while True:
+        try:
+            data = s.recv(4096)
+        except EnvironmentError as error:
+            if error.errno in (errno.EAGAIN, errno.EWOULDBLOCK):
+                print("Would have blocked")
+                break
+
+        ret += data
+
+    return ret
+
+
+def run_client(s: socket.socket):
+    # For our use of recv_all, we'd rather not block
+    # s.setblocking(False)
+
+    while True:
+        data = s.recv(4096)  # TODO: What if a query exceeds this, or it is limited by hardware
+
+        if not data:
+            print("No data provided, closing client")
+            return
+
+        # Special control sequences sent for signalling when the listener is listening
+        # Data Link Escape + [Start of Text | End of Text]
+        if data == b"\x10\x02":
+            if tray_icon:
+                tray_icon.setIcon(QtGui.QIcon(APP_ACTIVATED_ICON_FILE))
+        elif data == b"\x10\x03":
+            if tray_icon:
+                tray_icon.setIcon(QtGui.QIcon(APP_ICON_FILE))
+        else:
+            print(f"Received text data {data}")
+            # TODO: Is this always UTF-8 compatible?
+            text = data.decode("utf-8")
+            translated_text = latex_to_unicode(text)
+
+            # TODO: Can this be sent back to the client to be written as well?
+            write_with_delay(translated_text or "ERROR", delay=use_key_delay * KEYPRESS_DELAY)
 
 
 def setup_hotkeys():
