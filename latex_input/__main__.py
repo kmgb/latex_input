@@ -1,11 +1,17 @@
 import argparse
+import threading
 from typing import Final
 from PyQt5 import QtGui, QtWidgets, QtCore
 import keyboard
+import os
 import sys
 import time
 
-from latex_input.listener import KeyListener
+if os.name == "nt":
+    from latex_input.input_client_win import InputClient
+else:
+    from latex_input.input_client_generic import InputClient
+
 from latex_input.latex_converter import latex_to_unicode, FontContext
 from latex_input.parse_unicode_data import FontVariantType
 
@@ -19,8 +25,7 @@ TEXT_EDIT_FONTSIZE: Final[int] = 12
 # them at all.
 KEYPRESS_DELAY: Final[float] = 0.002
 
-listener = KeyListener()
-tray_icon: QtWidgets.QSystemTrayIcon
+tray_icon: QtWidgets.QSystemTrayIcon = None
 use_key_delay = True
 is_math_mode = False
 
@@ -63,91 +68,68 @@ def main():
         global is_math_mode
         is_math_mode = True
 
-    setup_hotkeys()
+    thread = threading.Thread(target=input_thread, daemon=True)
+    thread.start()
+
     print(f"{APP_NAME} started")
 
     if args.no_gui:
-        keyboard.wait()
+        thread.join()
     else:
         run_gui()
 
-
-def setup_hotkeys():
-    # We use CapsLock as a modifier key for the hotkey, so we should
-    # disable capslock functionality
-    # TODO: Disable capslock when the script start
-    # suppress=True prevents the "s" in the hotkey from appearing in text fields
-    # but we still end up capturing the "s" press in the listener
-    # Call_later fixes this without having to wait until the user releases the keys
-    # to activate (trigger_on_release), which would be bad UX.
-    keyboard.add_hotkey(
-        "capslock+s",
-        lambda: keyboard.call_later(activate_listener),
-        suppress=True,
-        # trigger_on_release=True
-    )
-    keyboard.block_key("capslock")
-
-    keyboard.add_hotkey("space", accept_callback)
-    keyboard.add_hotkey("escape", cancel_listener)
+    print(f"{APP_NAME} stopped")
 
 
-def activate_listener(text=""):
-    """
-    Start listening to global keystrokes, adds `text` to the
-    beginning of the listening buffer.
-    """
-    print("Starting listening")
-    listener.start_listening(text)
+def input_thread():
+    client = InputClient()
 
+    while True:
+        client.wait_for_hotkey()
+
+        set_icon_state(True)  # We are now listening
+
+        listened_text = ""
+        translated_text = ""
+
+        # Continue until valid translation is made or user cancels
+        while True:
+            text = client.listen()
+
+            # User cancelled the input
+            if text is None:
+                listened_text = ""
+                break
+
+            listened_text += text
+            translation = latex_to_unicode(
+                listened_text,
+                FontContext(formatting=FontVariantType.ITALIC if is_math_mode else 0)
+            )
+
+            if translation:
+                translated_text = translation
+                break
+            else:
+                print("Failed translation, re-listening...")
+                listened_text += " "  # Re-add the otherwise-ignored space
+
+        if translated_text:
+            num_backspace = len(listened_text) + 1  # +1 for space character
+            write_with_delay("\b" * num_backspace, delay=use_key_delay * KEYPRESS_DELAY)
+
+            print(f"Writing: '{translated_text}'")
+            write_with_delay(translated_text, delay=use_key_delay * KEYPRESS_DELAY)
+
+        # No longer listening
+        set_icon_state(False)
+
+
+def set_icon_state(activated: bool):
     if tray_icon:
-        tray_icon.setIcon(QtGui.QIcon(APP_ACTIVATED_ICON_FILE))
-
-
-def accept_callback():
-    if not listener.is_listening:
-        return
-
-    listened_text = listener.stop_listening()
-    print(f"Listened text: '{listened_text}'")
-    text = listened_text
-
-    # Continue listening, there was no data to translate
-    if len(listened_text) == 0 or listened_text == " ":
-        activate_listener()
-        return
-
-    translated_text = latex_to_unicode(
-        text,
-        FontContext(formatting=FontVariantType.ITALIC if is_math_mode else 0)
-    )
-
-    # Restart the listener with the original text if the translation failed
-    # Could be the user is still entering text that would make the translation work
-    # ie. `\mathbb{e asy}' fails at `\mathbb{e' but succeeds when complete.
-    if not translated_text:
-        print(f"Failed conversion, re-listening with text '{listened_text}'")
-        activate_listener(listened_text)
-        return
-
-    # Press backspace to delete the entered LaTeX
-    num_backspace = len(listened_text) + 1  # +1 for space character
-    write_with_delay("\b" * num_backspace, delay=use_key_delay * KEYPRESS_DELAY)
-
-    print(f"Writing: '{translated_text}'")
-    write_with_delay(translated_text, delay=use_key_delay * KEYPRESS_DELAY)
-
-    # Continue listening
-    # HACK: The call_later is to fix consecutive `accept_callback`s from picking up
-    # the <space> from the previous call.
-    keyboard.call_later(activate_listener)
-
-
-def cancel_listener():
-    listener.stop_listening()
-
-    if tray_icon:
-        tray_icon.setIcon(QtGui.QIcon(APP_ICON_FILE))
+        tray_icon.setIcon(QtGui.QIcon(
+            APP_ACTIVATED_ICON_FILE if activated else APP_ICON_FILE
+        ))
 
 
 def write_with_delay(text: str, delay: float):
