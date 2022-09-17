@@ -42,48 +42,33 @@ ExitApp
 """
 
 
-class Client():
-    def __init__(self, on_accept=None, on_activate=None, on_deactivate=None):
+class InputClient():
+    def __init__(self):
         self.ahk = ahk.AHK()
-        self.on_accept = on_accept
-        self.on_activate = on_activate
-        self.on_deactivate = on_deactivate
         self.proc = None
 
-    def listen(self) -> NoReturn:
-        """
-        Listens for key activation and records written text.
-        Sends any written text to `on_accept`.
-        """
-        # Special handling to kill any dangling AutoHotKey process when this
-        # thread gets killed
-        def kill_proc():
-            if self.proc:
-                self.proc.kill()
+        atexit.register(self._kill_proc)
 
-        atexit.register(kill_proc)
+    def _kill_proc(self):
+        if self.proc:
+            self.proc.kill()
 
-        while True:
-            self._do_script(ahk_wait_activation)
+    def wait_for_hotkey(self):
+        self._do_script(ahk_wait_activation)
 
-            if self.on_activate:
-                self.on_activate()
+    def listen(self) -> str | None:
+        result = self._do_script(ahk_listen_script)
 
-            result = self._do_script(ahk_listen_script)
+        if result == "\x10\x03":
+            return None
 
-            # Data Link Escape + End of Text
-            if result == "\x10\x03":
-                if self.on_deactivate:
-                    self.on_deactivate()
-            else:
-                self.on_accept(result)
-                if self.on_deactivate:
-                    self.on_deactivate()
+        return result
 
     def _do_script(self, script: str) -> str:
         # We choose blocking=False to get a Popen instance, then block
         # on it exiting anyways.
         self.proc = self.ahk.run_script(script, blocking=False)
         out, err = self.proc.communicate()
+        self.proc = None
 
         return out.decode('utf-8')

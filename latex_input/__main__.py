@@ -5,7 +5,7 @@ from PyQt5 import QtGui, QtWidgets, QtCore
 import keyboard
 import sys
 import time
-from latex_input.client_win import Client
+from latex_input.input_client_win import InputClient
 
 from latex_input.latex_converter import latex_to_unicode, FontContext
 from latex_input.parse_unicode_data import FontVariantType
@@ -63,22 +63,58 @@ def main():
         global is_math_mode
         is_math_mode = True
 
-    client = Client(
-        on_accept=accept_callback,
-        on_activate=lambda: set_icon_state(True),
-        on_deactivate=lambda: set_icon_state(False)
-    )
-    client_thread = threading.Thread(target=client.listen, daemon=True)
-    client_thread.start()
+    thread = threading.Thread(target=input_thread, daemon=True)
+    thread.start()
 
     print(f"{APP_NAME} started")
 
     if args.no_gui:
-        client_thread.join()
+        thread.join()
     else:
         run_gui()
 
     print(f"{APP_NAME} stopped")
+
+
+def input_thread():
+    client = InputClient()
+
+    while True:
+        client.wait_for_hotkey()
+
+        set_icon_state(True)  # We are now listening
+
+        listened_text = ""
+        translated_text = ""
+
+        # Continue until valid translation is made or user cancels
+        while True:
+            text = client.listen()
+
+            # User cancelled the input
+            if text is None:
+                listened_text = ""
+                break
+
+            listened_text += text
+            translation = latex_to_unicode(listened_text)
+
+            if translation:
+                translated_text = translation
+                break
+            else:
+                print("Failed translation, re-listening...")
+                listened_text += " "  # Re-add the otherwise-ignored space
+
+        if translated_text:
+            num_backspace = len(listened_text) + 1  # +1 for space character
+            write_with_delay("\b" * num_backspace, delay=use_key_delay * KEYPRESS_DELAY)
+
+            print(f"Writing: '{translated_text}'")
+            write_with_delay(translated_text, delay=use_key_delay * KEYPRESS_DELAY)
+
+        # No longer listening
+        set_icon_state(False)
 
 
 def set_icon_state(activated: bool):
