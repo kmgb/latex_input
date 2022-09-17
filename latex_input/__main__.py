@@ -97,7 +97,10 @@ def input_thread():
                 break
 
             listened_text += text
-            translation = latex_to_unicode(listened_text)
+            translation = latex_to_unicode(
+                listened_text,
+                FontContext(formatting=FontVariantType.ITALIC if is_math_mode else 0)
+            )
 
             if translation:
                 translated_text = translation
@@ -122,38 +125,6 @@ def set_icon_state(activated: bool):
         tray_icon.setIcon(QtGui.QIcon(
             APP_ACTIVATED_ICON_FILE if activated else APP_ICON_FILE
         ))
-
-
-def accept_callback(text):
-    # Continue listening, there was no data to translate
-    # if len(listened_text) == 0 or listened_text == " ":
-    #     activate_listener()
-    #     return
-
-    translated_text = latex_to_unicode(
-        text,
-        FontContext(formatting=FontVariantType.ITALIC if is_math_mode else 0)
-    )
-
-    # Restart the listener with the original text if the translation failed
-    # Could be the user is still entering text that would make the translation work
-    # ie. `\mathbb{e asy}' fails at `\mathbb{e' but succeeds when complete.
-    if not translated_text:
-        print(f"Failed conversion, re-listening with text '{text}'")
-        # activate_listener(listened_text)
-        return
-
-    # Press backspace to delete the entered LaTeX
-    num_backspace = len(text) + 1  # +1 for space character
-    write_with_delay("\b" * num_backspace, delay=use_key_delay * KEYPRESS_DELAY)
-
-    print(f"Writing: '{translated_text}'")
-    write_with_delay(translated_text, delay=use_key_delay * KEYPRESS_DELAY)
-
-    # Continue listening
-    # HACK: The call_later is to fix consecutive `accept_callback`s from picking up
-    # the <space> from the previous call.
-    # keyboard.call_later(activate_listener)
 
 
 def write_with_delay(text: str, delay: float):

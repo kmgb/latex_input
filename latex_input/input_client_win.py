@@ -42,7 +42,7 @@ ExitApp
 """
 
 
-class InputClient():
+class InputClient:
     def __init__(self):
         self.ahk = ahk.AHK()
         self.proc = None
