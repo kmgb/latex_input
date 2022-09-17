@@ -1,9 +1,11 @@
 import argparse
+import threading
 from typing import Final
 from PyQt5 import QtGui, QtWidgets, QtCore
 import keyboard
 import sys
 import time
+from latex_input.client_win import Client
 
 from latex_input.listener import KeyListener
 from latex_input.latex_converter import latex_to_unicode, FontContext
@@ -63,33 +65,29 @@ def main():
         global is_math_mode
         is_math_mode = True
 
-    setup_hotkeys()
+    client = Client(
+        on_accept=accept_callback,
+        on_activate=lambda: set_icon_state(True),
+        on_deactivate=lambda: set_icon_state(False)
+    )
+    client_thread = threading.Thread(target=client.run, daemon=True)
+    client_thread.start()
+
     print(f"{APP_NAME} started")
 
     if args.no_gui:
-        keyboard.wait()
+        client_thread.join()
     else:
         run_gui()
 
+    print(f"{APP_NAME} stopped")
 
-def setup_hotkeys():
-    # We use CapsLock as a modifier key for the hotkey, so we should
-    # disable capslock functionality
-    # TODO: Disable capslock when the script start
-    # suppress=True prevents the "s" in the hotkey from appearing in text fields
-    # but we still end up capturing the "s" press in the listener
-    # Call_later fixes this without having to wait until the user releases the keys
-    # to activate (trigger_on_release), which would be bad UX.
-    keyboard.add_hotkey(
-        "capslock+s",
-        lambda: keyboard.call_later(activate_listener),
-        suppress=True,
-        # trigger_on_release=True
-    )
-    keyboard.block_key("capslock")
 
-    keyboard.add_hotkey("space", accept_callback)
-    keyboard.add_hotkey("escape", cancel_listener)
+def set_icon_state(activated: bool):
+    if tray_icon:
+        tray_icon.setIcon(QtGui.QIcon(
+            APP_ACTIVATED_ICON_FILE if activated else APP_ICON_FILE
+        ))
 
 
 def activate_listener(text=""):
