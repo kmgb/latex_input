@@ -3,9 +3,14 @@ import threading
 from typing import Final
 from PyQt5 import QtGui, QtWidgets, QtCore
 import keyboard
+import os
 import sys
 import time
-from latex_input.input_client_win import InputClient
+
+if os.name == "nt":
+    from latex_input.input_client_win import InputClient
+else:
+    from latex_input.input_client_generic import InputClient
 
 from latex_input.latex_converter import latex_to_unicode, FontContext
 from latex_input.parse_unicode_data import FontVariantType
@@ -20,7 +25,7 @@ TEXT_EDIT_FONTSIZE: Final[int] = 12
 # them at all.
 KEYPRESS_DELAY: Final[float] = 0.002
 
-tray_icon: QtWidgets.QSystemTrayIcon
+tray_icon: QtWidgets.QSystemTrayIcon = None
 use_key_delay = True
 is_math_mode = False
 

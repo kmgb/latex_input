@@ -1,4 +1,3 @@
-from typing import NoReturn
 import ahk
 import atexit
 
