@@ -4,9 +4,9 @@ import atexit
 ahk_wait_activation = r"""
 #NoTrayIcon
 CapsLock & s::
-    ; Wait for CapsLock to be released
-    ; Otherwise this script exits before it can toggle CapsLock back off
-    KeyWait, CapsLock
+    ; This script exits before it can toggle CapsLock back
+    ; So we manually toggle it to its original state
+    SetCapsLockState % !GetKeyState("CapsLock", "T")
     ExitApp
 return
 """
