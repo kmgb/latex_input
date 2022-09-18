@@ -2,7 +2,7 @@ import copy
 from dataclasses import dataclass
 import re
 
-from latex_input.parse_unicode_data import FontVariantType
+from latex_input.unicode_structs import FontVariantType
 
 from latex_input.unicode_data import (
     superscript_mapping, subscript_mapping, character_font_variants, latex_symbols

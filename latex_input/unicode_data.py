@@ -1,6 +1,11 @@
-from latex_input.parse_unicode_data import (
+from latex_input.unicode_structs import (
     CharacterFontVariant, FontVariantType,
-    character_font_variants, subscript_mapping, superscript_mapping
+)
+
+from latex_input.cached_unicode_data import (
+    cached_character_font_variants as character_font_variants,
+    cached_subscripts as subscript_mapping,
+    cached_superscripts as superscript_mapping
 )
 
 # Manual fixes

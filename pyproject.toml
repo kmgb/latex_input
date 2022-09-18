@@ -1,0 +1,27 @@
+[project]
+name = "latex_input"
+description = "Use LaTeX-style inputs to write the equivalent unicode characters anywhere"
+version = "0.1.0"
+authors = [
+    { name = "kmgb", email = "kevinmgb@proton.me" }
+]
+readme = "README.md"
+requires-python = ">=3.7"
+dependencies = [
+    "PyQt5==5.15.7",
+    "ahk==0.14.1",
+    "ahk-binary==1.1.33.9",
+    "keyboard==0.13.5"
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/kmgb/latex_input"
+"Bug Tracker" = "https://github.com/kmgb/latex_input/issues"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"

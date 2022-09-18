@@ -13,7 +13,7 @@ else:
     from latex_input.input_client_generic import InputClient
 
 from latex_input.latex_converter import latex_to_unicode, FontContext
-from latex_input.parse_unicode_data import FontVariantType
+from latex_input.unicode_structs import FontVariantType
 
 APP_NAME: Final[str] = "LaTeX Input"
 APP_ICON_FILE: Final[str] = "./icon.ico"

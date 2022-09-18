@@ -1,87 +1,80 @@
-from dataclasses import dataclass
-from enum import IntFlag, auto
 import typing
 
-
-class FontVariantType(IntFlag):
-    BOLD = auto()
-    DOUBLE_STRUCK = auto()
-    FRAKTUR = auto()
-    ITALIC = auto()
-    MATHEMATICAL = auto()
-    MONOSPACE = auto()
-    SANS_SERIF = auto()
-    SCRIPT = auto()
+from unicode_structs import CharacterFontVariant, FontVariantType
 
 
-@dataclass
-class CharacterFontVariant:
-    text: str
-    kind: FontVariantType
+def main():
+    subscript_mapping = dict[str, str]()
+    superscript_mapping = dict[str, str]()
+    character_font_variants = dict[str, list[CharacterFontVariant]]()
+
+    read_datafile(subscript_mapping, superscript_mapping, character_font_variants)
+
+    print(str(subscript_mapping).encode("utf-8"))
+    print("\n\n")
+    print(str(superscript_mapping).encode("utf-8"))
+    print("\n\n")
+    print(str(character_font_variants).encode("utf-8"))
 
 
-subscript_mapping = dict[str, str]()
-superscript_mapping = dict[str, str]()
+def read_datafile(subscript_mapping, superscript_mapping, character_font_variants):
+    # TODO: Fix finding superscript alpha, iota, epsilon
+    # Their fallbacks are listed as the "Latin" variants, meaning they aren't found
+    # when looking for ^{\alpha} as it looks for the Greek variants
+    with open("./UnicodeData.txt", encoding="utf-8") as f:
+        for line in f:
+            fields = line.split(";")
+            assert len(fields) == 15
 
-character_font_variants = dict[str, list[CharacterFontVariant]]()
+            codepoint = fields[0]
+            name = fields[1]
+            decomposition = fields[5]
 
+            char = chr(int(codepoint, 16))
 
-# TODO: Fix finding superscript alpha, iota, epsilon
-# Their fallbacks are listed as the "Latin" variants, meaning they aren't found
-# when looking for ^{\alpha} as it looks for the Greek variants
-with open("./UnicodeData.txt", encoding="utf-8") as f:
-    for line in f:
-        fields = line.split(";")
-        assert len(fields) == 15
+            if decomposition:
+                # Help out mypy with redefinitions
+                map_type: typing.Any
+                basechars: typing.Any
 
-        codepoint = fields[0]
-        name = fields[1]
-        decomposition = fields[5]
+                # print(f"{name} has decomposition {decomposition}")
+                *map_type, basechars = decomposition.split(maxsplit=1)
 
-        char = chr(int(codepoint, 16))
+                # We aren't looking for 2 -> 1 mappings, skip any that decompose to
+                # multiple characters.
+                basechars = basechars.split()
+                if len(basechars) > 1:
+                    continue
 
-        if decomposition:
-            # Help out mypy with redefinitions
-            map_type: typing.Any
-            basechars: typing.Any
+                basechar = chr(int(basechars[0], 16))
 
-            # print(f"{name} has decomposition {decomposition}")
-            *map_type, basechars = decomposition.split(maxsplit=1)
+                assert len(map_type) < 2
+                map_type = "".join(map_type)
 
-            # We aren't looking for 2 -> 1 mappings, skip any that decompose to
-            # multiple characters.
-            basechars = basechars.split()
-            if len(basechars) > 1:
-                continue
+                if map_type == "<super>":
+                    # Intentionally overwrite if there's multiple
+                    # Later unicode values tend to look more consistent with one another
+                    superscript_mapping[basechar] = char
 
-            basechar = chr(int(basechars[0], 16))
+                elif map_type == "<sub>":
+                    # Intentionally overwrite if there's multiple
+                    subscript_mapping[basechar] = char
 
-            assert len(map_type) < 2
-            map_type = "".join(map_type)
+                elif map_type == "<font>":
+                    variant = CharacterFontVariant(
+                        char,
+                        FontVariantType.MATHEMATICAL * ("MATHEMATICAL" in name)
+                        | FontVariantType.BOLD * ("BOLD" in name)
+                        | FontVariantType.DOUBLE_STRUCK * ("DOUBLE-STRUCK" in name)
+                        | FontVariantType.FRAKTUR * (any(x in name for x in ["FRAKTUR", "BLACK-LETTER"]))
+                        | FontVariantType.ITALIC * ("ITALIC" in name)
+                        | FontVariantType.MONOSPACE * ("MONOSPACE" in name)
+                        | FontVariantType.SANS_SERIF * ("SANS-SERIF" in name)
+                        | FontVariantType.SCRIPT * ("SCRIPT" in name)
+                    )
 
-            if map_type == "<super>":
-                # Intentionally overwrite if there's multiple
-                # Later unicode values tend to look more consistent with one another
-                superscript_mapping[basechar] = char
+                    character_font_variants.setdefault(basechar, []).append(variant)
 
-            elif map_type == "<sub>":
-                # Intentionally overwrite if there's multiple
-                subscript_mapping[basechar] = char
-
-            elif map_type == "<font>":
-                variant = CharacterFontVariant(
-                    char,
-                    FontVariantType.MATHEMATICAL * ("MATHEMATICAL" in name)
-                    | FontVariantType.BOLD * ("BOLD" in name)
-                    | FontVariantType.DOUBLE_STRUCK * ("DOUBLE-STRUCK" in name)
-                    | FontVariantType.FRAKTUR * (any(x in name for x in ["FRAKTUR", "BLACK-LETTER"]))
-                    | FontVariantType.ITALIC * ("ITALIC" in name)
-                    | FontVariantType.MONOSPACE * ("MONOSPACE" in name)
-                    | FontVariantType.SANS_SERIF * ("SANS-SERIF" in name)
-                    | FontVariantType.SCRIPT * ("SCRIPT" in name)
-                )
-
-                character_font_variants.setdefault(basechar, []).append(variant)
 
 if __name__ == "__main__":
-    print(str(character_font_variants).encode("utf-8"))
+    main()
