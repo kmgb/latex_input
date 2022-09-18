@@ -11,6 +11,10 @@ Makes inputting special symbols much easier and not limited in scope to a LaTeX 
 Just type <kbd>CapsLock+S</kbd> in any application, enter your desired LaTeX, then press <kbd>Space</kbd> to convert the entered text.  
 Data about character variants is parsed directly from UnicodeData.txt, which can be easily updated with the latest version to keep up to date.
 
+## Installation
+Requires Python ≥ 3.10  
+`pip install latex_input`
+
 ___
 
 UnicodeData.txt retrieved from https://www.unicode.org/Public/UCD/latest/ucd/UnicodeData.txt
