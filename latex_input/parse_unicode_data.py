@@ -2,6 +2,12 @@ import typing
 
 from unicode_structs import CharacterFontVariant, FontVariantType
 
+"""
+This is a utility script for generating mappings for unicode superscripts, subscripts and
+the many font variants for each character.
+It will output the result to `unicode_data_output.txt`.
+"""
+
 
 def main():
     subscript_mapping = dict[str, str]()
@@ -10,11 +16,13 @@ def main():
 
     read_datafile(subscript_mapping, superscript_mapping, character_font_variants)
 
-    print(str(subscript_mapping).encode("utf-8"))
-    print("\n\n")
-    print(str(superscript_mapping).encode("utf-8"))
-    print("\n\n")
-    print(str(character_font_variants).encode("utf-8"))
+    with open("./unicode_data_output.txt", mode="w", encoding="utf-8") as f:
+        f.write("SUBSCRIPTS:")
+        f.write(str(subscript_mapping))
+        f.write("\n\nSUPERSCRIPTS:")
+        f.write(str(superscript_mapping))
+        f.write("\n\nFONT VARIANTS:")
+        f.write(str(character_font_variants))
 
 
 def read_datafile(subscript_mapping, superscript_mapping, character_font_variants):
