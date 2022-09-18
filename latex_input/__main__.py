@@ -6,6 +6,7 @@ import keyboard
 import os
 import sys
 import time
+from importlib.resources import files
 
 if os.name == "nt":
     from latex_input.input_client_win import InputClient
@@ -16,8 +17,8 @@ from latex_input.latex_converter import latex_to_unicode, FontContext
 from latex_input.unicode_structs import FontVariantType
 
 APP_NAME: Final[str] = "LaTeX Input"
-APP_ICON_FILE: Final[str] = "./icon.ico"
-APP_ACTIVATED_ICON_FILE: Final[str] = "./icon_activated.ico"
+APP_ICON_FILE: Final[str] = str(files('latex_input.data').joinpath('icon.ico'))
+APP_ACTIVATED_ICON_FILE: Final[str] = str(files('latex_input.data').joinpath('icon_activated.ico'))
 TEXT_EDIT_FONTSIZE: Final[int] = 12
 
 # Necessary, as some applications will process keystrokes out

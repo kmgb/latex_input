@@ -6,7 +6,7 @@ authors = [
     { name = "kmgb", email = "kevinmgb@proton.me" }
 ]
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.10"
 dependencies = [
     "PyQt5==5.15.7",
     "ahk==0.14.1",
@@ -25,3 +25,6 @@ classifiers = [
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.package-data]
+"latex_input.data" = ["*.ico"]
