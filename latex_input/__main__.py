@@ -72,6 +72,11 @@ def main():
     thread = threading.Thread(target=input_thread, daemon=True)
     thread.start()
 
+    if os.name == "nt":
+        # The first call to `send` is slow on Windows
+        # We send a generally unused key to avoid this slowdown
+        keyboard.send('f24')  # 'reserved '
+
     print(f"{APP_NAME} started")
 
     if args.no_gui:
