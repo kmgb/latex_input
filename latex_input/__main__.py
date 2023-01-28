@@ -29,6 +29,7 @@ KEYPRESS_DELAY: Final[float] = 0.002
 tray_icon: QtWidgets.QSystemTrayIcon = None
 use_key_delay = True
 is_math_mode = False
+is_easy_mode = True
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -48,7 +49,15 @@ def get_parser() -> argparse.ArgumentParser:
     # --math-mode and --no-math-mode
     parser.add_argument(
         "--math-mode",
-        action=argparse.BooleanOptionalAction
+        action=argparse.BooleanOptionalAction,
+        help="Italic text by default"
+    )
+
+    # --easy-mode and --no-easy-mode
+    parser.add_argument(
+        "--easy-mode",
+        action=argparse.BooleanOptionalAction,
+        help="Accepts `lambda` in place of `\\lambda`. Only works for single symbols"
     )
 
     return parser
@@ -68,6 +77,14 @@ def main():
     elif args.math_mode:
         global is_math_mode
         is_math_mode = True
+
+    if args.easy_mode is None:
+        # TODO: Load from preferences file
+        pass
+
+    elif not args.easy_mode:
+        global is_easy_mode
+        is_easy_mode = False
 
     thread = threading.Thread(target=input_thread, daemon=True)
     thread.start()
@@ -110,7 +127,8 @@ def input_thread():
             listened_text += text
             translation = latex_to_unicode(
                 listened_text,
-                FontContext(formatting=FontVariantType.ITALIC if is_math_mode else 0)
+                FontContext(formatting=FontVariantType.ITALIC if is_math_mode else 0),
+                is_easy_mode
             )
 
             if translation:
@@ -202,28 +220,39 @@ def run_gui():
     text_edit.setFont(text_edit_font)
     layout.addWidget(text_edit)
 
+    easy_mode_checkbox = QtWidgets.QCheckBox(
+        "Easy mode — don't require backslash for single symbols"
+    )
+    easy_mode_checkbox.setChecked(is_easy_mode)
+
     math_mode_checkbox = QtWidgets.QCheckBox(
         "Math mode — italic text by default"
     )
     math_mode_checkbox.setChecked(is_math_mode)
-
-    def on_mathmode_checked(state: bool):
-        global is_math_mode
-        is_math_mode = state
-
-    math_mode_checkbox.clicked.connect(on_mathmode_checked)
-    layout.addWidget(math_mode_checkbox)
 
     key_delay_checkbox = QtWidgets.QCheckBox(
         "Slower key presses (some applications need this to work properly — including this window)"
     )
     key_delay_checkbox.setChecked(use_key_delay)
 
+    def on_easymode_checked(state: bool):
+        global is_easy_mode
+        is_easy_mode = state
+
+    def on_mathmode_checked(state: bool):
+        global is_math_mode
+        is_math_mode = state
+
     def on_keydelay_checked(state: bool):
         global use_key_delay
         use_key_delay = state
 
+    easy_mode_checkbox.clicked.connect(on_easymode_checked)
+    math_mode_checkbox.clicked.connect(on_mathmode_checked)
     key_delay_checkbox.clicked.connect(on_keydelay_checked)
+
+    layout.addWidget(easy_mode_checkbox)
+    layout.addWidget(math_mode_checkbox)
     layout.addWidget(key_delay_checkbox)
 
     tray_icon = SystemTrayIcon(QtGui.QIcon(APP_ICON_FILE))

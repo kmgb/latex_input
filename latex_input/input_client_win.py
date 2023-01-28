@@ -2,6 +2,7 @@ import ahk
 import atexit
 
 ahk_wait_activation = r"""
+#NoEnv
 #NoTrayIcon
 CapsLock & s::
     ; This script exits before it can toggle CapsLock back
@@ -12,6 +13,7 @@ return
 """
 
 ahk_listen_script = r"""
+#NoEnv
 #NoTrayIcon
 SendDeactivation()
 {

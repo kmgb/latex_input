@@ -24,7 +24,7 @@ class FontContext:
 font_context_stack = list[FontContext]()
 
 
-def latex_to_unicode(tex, context=FontContext()) -> str | None:
+def latex_to_unicode(tex, context=FontContext(), is_easy_mode=False) -> str | None:
     parser = LatexRDescentParser()
 
     font_context_stack.append(context)
@@ -32,6 +32,13 @@ def latex_to_unicode(tex, context=FontContext()) -> str | None:
     try:
         result = parser.parse(tex)
         print(result)
+
+        if is_easy_mode:
+            match result:
+                case ASTLatex([ASTLiteral(text)]):
+                    if text in latex_symbols:
+                        result = ASTLatex([ASTSymbol(text)])
+
         return result.convert()
     except Exception as e:
         print(f"Failed to convert '{tex}', Error = {e}")
