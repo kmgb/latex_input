@@ -12,7 +12,9 @@ class InputClient:
         keyboard.block_key("capslock")
         keyboard.wait('capslock+s', suppress=True, trigger_on_release=True)
 
-    def listen(self) -> str | None:
+    def listen(self, starting_text: str) -> str | None:
+        self.key_log = starting_text
+
         keyboard.hook(self._hook_callback)
 
         text = self.queue.get()
@@ -26,6 +28,7 @@ class InputClient:
         if event.event_type != keyboard.KEY_DOWN:
             return
 
+        assert event.name
         # Cancel characters
         if any(substring in event.name
                 for substring in ["alt", "ctrl", "shift", "esc", "enter",

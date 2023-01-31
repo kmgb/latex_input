@@ -112,21 +112,21 @@ def input_thread():
 
         set_icon_state(True)  # We are now listening
 
-        listened_text = ""
+        text = ""
         translated_text = ""
 
         # Continue until valid translation is made or user cancels
         while True:
-            text = client.listen()
+            text = client.listen(text)
 
             # User cancelled the input
             if text is None:
-                listened_text = ""
+                print("User cancelled the input")
+                text = ""
                 break
 
-            listened_text += text
             translation = latex_to_unicode(
-                listened_text,
+                text,
                 FontContext(formatting=FontVariantType.ITALIC if is_math_mode else 0),
                 is_easy_mode
             )
@@ -136,10 +136,10 @@ def input_thread():
                 break
             else:
                 print("Failed translation, re-listening...")
-                listened_text += " "  # Re-add the otherwise-ignored space
+                text += " "  # Re-add the otherwise-ignored space
 
         if translated_text:
-            num_backspace = len(listened_text) + 1  # +1 for space character
+            num_backspace = len(text) + 1  # +1 for space character
             write_with_delay("\b" * num_backspace, delay=use_key_delay * KEYPRESS_DELAY)
 
             print(f"Writing: '{translated_text}'")

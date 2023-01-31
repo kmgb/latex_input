@@ -21,12 +21,26 @@ SendDeactivation()
     FileAppend, %var%, *, UTF-8  ; Send a special code to indicate the input was cancelled
 }
 
-Input, value, V, {Space}{Tab}{Esc}{LControl}{RControl}{LAlt}{RAlt}{LWin}{RWin}{AppsKey}{F1}{F2}{F3}{F4}{F5}{F6}{F7}{F8}{F9}{F10}{F11}{F12}{Left}{Right}{Up}{Down}{Home}{End}{PgUp}{PgDn}{Del}{Ins}{NumLock}{PrintScreen}{Pause}
+SendBackspace(value)
+{
+    bs := Chr(8)
+    FileAppend, %value%, *, UTF-8
+    FileAppend, %bs%, *, UTF-8  ; Send a special code at the end to indicate backspace was pressed
+}
+
+Input, value, V, {Space}{Tab}{BS}{Esc}{LControl}{RControl}{LAlt}{RAlt}{LWin}{RWin}{AppsKey}{F1}{F2}{F3}{F4}{F5}{F6}{F7}{F8}{F9}{F10}{F11}{F12}{Left}{Right}{Up}{Down}{Home}{End}{PgUp}{PgDn}{Del}{Ins}{NumLock}{PrintScreen}{Pause}
 
 ; New Input has been started, cancel this one
 if (ErrorLevel = "NewInput")
 {
     SendDeactivation()
+    ExitApp
+}
+
+; Send notification on backspace
+if (ErrorLevel == "EndKey:Backspace")
+{
+    SendBackspace(value)
     ExitApp
 }
 
@@ -57,11 +71,22 @@ class InputClient:
     def wait_for_hotkey(self):
         self._do_script(ahk_wait_activation)
 
-    def listen(self) -> str | None:
-        result = self._do_script(ahk_listen_script)
+    def listen(self, starting_text: str) -> str | None:
+        result = starting_text
 
-        if result == "\x10\x03":
-            return None
+        while True:
+            data = self._do_script(ahk_listen_script)
+
+            if data == "\x10\x03":  # Cancellation sequence
+                return None
+
+            # Concatenate the data from the script, handling backspace
+            result = self._add_characters(result, data)
+
+            if data.endswith("\b"):
+                continue
+
+            break
 
         return result
 
@@ -73,3 +98,16 @@ class InputClient:
         self.proc = None
 
         return out.decode('utf-8')
+
+    def _add_characters(self, base: str, add: str) -> str:
+        result = base
+
+        # If the string contains backspace, handle that by deleting the previous character
+        for c in add:
+            if c == "\b":
+                if result:
+                    result = result[:-1]
+            else:
+                result += c
+
+        return result
