@@ -11,7 +11,7 @@ from latex_input.unicode_data import (
 
 @dataclass
 class FontContext:
-    formatting: FontVariantType = 0
+    formatting: FontVariantType = FontVariantType(0)
     is_subscript: bool = False
     is_superscript: bool = False
 
@@ -155,13 +155,14 @@ class LatexRDescentParser:
     Macro   -> (\Text|^|_){Expr} | ^Char | _Char
     BSItem  -> \Text
     Text    -> Char+
-    Char    -> (?:[a-zA-Z0-9 \!@]|(?:\\[\\\^_\{}]))
+    Char    -> (?:[anything but \^_{}]|(?:\\[\\\^_\{}]))
     """
     expression = ""
     index = 0
-    char_regex = re.compile(r"(?:[a-zA-Z0-9 =\!\-+\()\[\]<>/'\"]|(?:\\[\\\^_\{}]))")
-    text_regex = re.compile(char_regex.pattern + "+")
-    ident_regex = re.compile(char_regex.pattern.replace(" ", "") + "+")  # Remove space as option
+    char_regex = re.compile(r"(?:[^\\\^\_\{}]|(?:\\[\\\^_\{}]))")
+    text_regex = re.compile(char_regex.pattern + "+")  # Text is multiple chars
+    # Ident is multiple chars, not allowing spaces
+    ident_regex = re.compile(r"(?:[^\\\^\_\{} ]|(?:\\[\\\^_\{}]))+")
 
     def parse(self, expression) -> ASTLatex:
         self.expression = expression
