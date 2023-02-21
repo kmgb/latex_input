@@ -9,7 +9,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "PyQt5==5.15.7",
-    "ahk==0.14.1",
+    "ahk==0.14.2",
     "ahk-binary==1.1.33.9",
     "keyboard==0.13.5"
 ]
