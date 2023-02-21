@@ -1,7 +1,7 @@
 [project]
 name = "latex_input"
 description = "Use LaTeX-style inputs to write the equivalent unicode characters anywhere"
-version = "0.2.1"
+version = "0.2.2"
 authors = [
     { name = "kmgb", email = "kevinmgb@proton.me" }
 ]
