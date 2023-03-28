@@ -26,7 +26,7 @@ TEXT_EDIT_FONTSIZE: Final[int] = 12
 # them at all.
 KEYPRESS_DELAY: Final[float] = 0.002
 
-tray_icon: QtWidgets.QSystemTrayIcon = None
+tray_icon: QtWidgets.QSystemTrayIcon | None = None
 use_key_delay = True
 is_math_mode = False
 is_easy_mode = True
@@ -127,7 +127,7 @@ def input_thread():
 
             translation = latex_to_unicode(
                 text,
-                FontContext(formatting=FontVariantType.ITALIC if is_math_mode else 0),
+                FontContext(formatting=FontVariantType.ITALIC if is_math_mode else FontVariantType.NONE),
                 is_easy_mode
             )
 

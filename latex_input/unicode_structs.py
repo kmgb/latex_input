@@ -3,6 +3,7 @@ from enum import IntFlag, auto
 
 
 class FontVariantType(IntFlag):
+    NONE = 0
     BOLD = auto()
     DOUBLE_STRUCK = auto()
     FRAKTUR = auto()
