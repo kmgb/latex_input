@@ -1,7 +1,7 @@
 import argparse
 import threading
 from typing import Final
-from PyQt5 import QtGui, QtWidgets, QtCore
+from PyQt6 import QtGui, QtWidgets, QtCore
 import keyboard
 import os
 import sys
@@ -193,7 +193,7 @@ class SystemTrayIcon(QtWidgets.QSystemTrayIcon):
         QtCore.QCoreApplication.exit()
 
     def _handle_activated(self, reason):
-        if reason == QtWidgets.QSystemTrayIcon.Trigger:
+        if reason == QtWidgets.QSystemTrayIcon.ActivationReason.Trigger:
             self.clicked.emit()
 
 
