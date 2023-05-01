@@ -24,6 +24,9 @@ class InputClient:
 
         return text
 
+    def write(self, char: str):
+        keyboard.write(char)
+
     def _hook_callback(self, event: keyboard.KeyboardEvent):
         if event.event_type != keyboard.KEY_DOWN:
             return

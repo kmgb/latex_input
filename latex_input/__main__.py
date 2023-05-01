@@ -10,6 +10,8 @@ from importlib.resources import files
 
 if os.name == "nt":
     from latex_input.input_client_win import InputClient
+elif os.name == "posix":
+    from latex_input.input_client_linux import InputClient
 else:
     from latex_input.input_client_generic import InputClient
 
@@ -140,10 +142,10 @@ def input_thread():
 
         if translated_text:
             num_backspace = len(text) + 1  # +1 for space character
-            write_with_delay("\b" * num_backspace, delay=use_key_delay * KEYPRESS_DELAY)
+            write_with_delay("\b" * num_backspace, delay=use_key_delay * KEYPRESS_DELAY, input_client=client)
 
             print(f"Writing: '{translated_text}'")
-            write_with_delay(translated_text, delay=use_key_delay * KEYPRESS_DELAY)
+            write_with_delay(translated_text, delay=use_key_delay * KEYPRESS_DELAY, input_client=client)
 
         # No longer listening
         set_icon_state(False)
@@ -156,7 +158,7 @@ def set_icon_state(activated: bool):
         ))
 
 
-def write_with_delay(text: str, delay: float):
+def write_with_delay(text: str, delay: float, input_client: InputClient):
     def accurate_delay(delay):
         """
         Function to provide accurate time delay
@@ -170,7 +172,7 @@ def write_with_delay(text: str, delay: float):
     for c in text:
         # Don't use built-in delay parameter as it uses time.sleep
         # which doesn't have good time accurancy until Python 3.11
-        keyboard.write(c)
+        input_client.write(c)
         accurate_delay(delay)
 
 

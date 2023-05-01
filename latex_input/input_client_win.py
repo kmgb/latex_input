@@ -1,5 +1,6 @@
 import ahk
 import atexit
+import keyboard
 
 ahk_wait_activation = r"""
 #NoEnv
@@ -89,6 +90,10 @@ class InputClient:
             break
 
         return result
+
+    def write(self, char: str):
+        # self._do_script(f"Send, {char}")
+        keyboard.write(char)  # TODO: See if ahk can be used instead
 
     def _do_script(self, script: str) -> str:
         # We choose blocking=False to get a Popen instance, then block
