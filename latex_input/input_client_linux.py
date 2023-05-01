@@ -1,11 +1,14 @@
 from pynput import keyboard as pkeyboard  # Differentiate from keyboard module
 from queue import Queue
 
+from subprocess import Popen, PIPE
+
 
 class InputClient:
     def __init__(self):
         self.key_log = ""
         self.queue = Queue(1)
+        self.controller = pkeyboard.Controller()
 
     def wait_for_hotkey(self):
         def on_activate():
@@ -16,7 +19,7 @@ class InputClient:
             return lambda k: f(l.canonical(k))
 
         hotkey = pkeyboard.HotKey(
-            pkeyboard.HotKey.parse("<ctrl>+<shift>+l"),
+            pkeyboard.HotKey.parse("<ctrl>+<shift>+i"),
             on_activate)
         with pkeyboard.Listener(
                 on_press=for_canonical(hotkey.press),
@@ -52,13 +55,69 @@ class InputClient:
         return text
 
     def write(self, char: str):
-        self._write_pynput(char)
+        assert len(char) == 1
+        if char == "\b":
+            self.controller.press(pkeyboard.Key.backspace)
+            self.controller.release(pkeyboard.Key.backspace)
+        else:
+            # self._write_pynput(char)
+            # self._write_ctrlshiftu(char)
+            self._write_clipboard(char)
 
     def _write_pynput(self, char: str):
-        controller = pkeyboard.Controller()
+        """
+        Write a character to the active window using pynput
+        Note: This doesn't always work, for example \\bigodot
+        - See https://github.com/moses-palmer/pynput/issues/465
+        """
+        self.controller.type(char)
 
-        if char == "\b":
-            controller.press(pkeyboard.Key.backspace)
-            controller.release(pkeyboard.Key.backspace)
-        else:
-            controller.type(char)
+    # TODO: Add Ctrl-shift-u method of typing unicode characters
+    # in case the pynput method fails for some cases.
+
+    def _write_ctrlshiftu(self, char: str):
+        """
+        Write a character to the active window using Ctrl+Shift+U
+        This is a workaround for the pynput method, which doesn't
+        work for some unicode characters
+
+        FIXME: Excessively slow, requires 0.05 delay between characters or else
+        it will fail to type the characters
+        """
+        codepoint = "{:x}".format(ord(char))
+
+        # Press Ctrl+Shift+U to start the unicode input process
+        self.controller.press(pkeyboard.Key.ctrl)
+        self.controller.press(pkeyboard.Key.shift)
+        self.controller.press("u")
+        self.controller.release("u")
+        self.controller.release(pkeyboard.Key.shift)
+        self.controller.release(pkeyboard.Key.ctrl)
+
+        # Type the codepoint
+        for c in codepoint:
+            self.controller.press(c)
+            self.controller.release(c)
+
+        # Press Enter to finish the unicode input process
+        self.controller.press(pkeyboard.Key.enter)
+        self.controller.release(pkeyboard.Key.enter)
+
+    def _write_clipboard(self, char: str):
+        """
+        Writes the character to the clipboard and pastes it. This seems to work in most cases
+        unlike the other methods.
+        Disadvantages:
+        - Requires xclip to be installed
+        - Overwrites the clipboard contents
+        - Only works if Ctrl-v is the paste shortcut (not true for terminals)
+        """
+        def copy_to_clipboard(text: str):
+            p = Popen(['xclip', '-selection', 'clipboard'], stdin=PIPE)
+            p.communicate(input=text.encode('utf-8'))
+
+        copy_to_clipboard(char)
+        self.controller.press(pkeyboard.Key.ctrl)
+        self.controller.press("v")
+        self.controller.release("v")
+        self.controller.release(pkeyboard.Key.ctrl)
