@@ -16,7 +16,7 @@ class InputClient:
             return lambda k: f(l.canonical(k))
 
         hotkey = pkeyboard.HotKey(
-            pkeyboard.HotKey.parse("<ctrl>+l"),
+            pkeyboard.HotKey.parse("<ctrl>+<shift>+l"),
             on_activate)
         with pkeyboard.Listener(
                 on_press=for_canonical(hotkey.press),
@@ -52,6 +52,9 @@ class InputClient:
         return text
 
     def write(self, char: str):
+        self._write_pynput(char)
+
+    def _write_pynput(self, char: str):
         controller = pkeyboard.Controller()
 
         if char == "\b":
