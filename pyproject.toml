@@ -9,9 +9,10 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "PyQt6",
-    "ahk",
-    "ahk-binary",
-    "keyboard==0.13.5"
+    "ahk==0.14.2; platform_system == 'Windows'",
+    "ahk-binary; platform_system == 'Windows'",
+    "keyboard==0.13.5; platform_system == 'Windows'",
+    "pynput; platform_system == 'Linux'"
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
