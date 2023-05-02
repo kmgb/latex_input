@@ -5,7 +5,6 @@ from PyQt6 import QtGui, QtWidgets, QtCore
 import keyboard
 import os
 import sys
-import time
 from importlib.resources import files
 
 ACTIVATION_HOTKEY = "CapsLock+S"
@@ -15,7 +14,7 @@ elif os.name == "posix":
     ACTIVATION_HOTKEY = "Ctrl+Alt+I"
     from latex_input.input_client_linux import InputClient
 else:
-    from latex_input.input_client_generic import InputClient
+    raise NotImplementedError("Unsupported OS")
 
 from latex_input.latex_converter import latex_to_unicode, FontContext
 from latex_input.unicode_structs import FontVariantType
@@ -144,10 +143,10 @@ def input_thread():
 
         if translated_text:
             num_backspace = len(text) + 1  # +1 for space character
-            write_with_delay("\b" * num_backspace, delay=use_key_delay * KEYPRESS_DELAY, input_client=client)
+            client.send_backspace(num_backspace, delay=use_key_delay * KEYPRESS_DELAY)
 
             print(f"Writing: '{translated_text}'")
-            write_with_delay(translated_text, delay=use_key_delay * KEYPRESS_DELAY, input_client=client)
+            client.write(translated_text, delay=use_key_delay * KEYPRESS_DELAY)
 
         # No longer listening
         set_icon_state(False)
@@ -158,24 +157,6 @@ def set_icon_state(activated: bool):
         tray_icon.setIcon(QtGui.QIcon(
             APP_ACTIVATED_ICON_FILE if activated else APP_ICON_FILE
         ))
-
-
-def write_with_delay(text: str, delay: float, input_client: InputClient):
-    def accurate_delay(delay):
-        """
-        Function to provide accurate time delay
-        From https://stackoverflow.com/a/50899124
-        """
-        target_time = time.perf_counter() + delay
-        while time.perf_counter() < target_time:
-            pass
-
-    # FIXME: Can use keyboard.write(text, delay=...) after Python 3.11
-    for c in text:
-        # Don't use built-in delay parameter as it uses time.sleep
-        # which doesn't have good time accurancy until Python 3.11
-        input_client.write(c)
-        accurate_delay(delay)
 
 
 class SystemTrayIcon(QtWidgets.QSystemTrayIcon):

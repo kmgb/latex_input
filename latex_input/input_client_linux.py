@@ -1,7 +1,7 @@
 from pynput import keyboard as pkeyboard  # Differentiate from keyboard module
 from queue import Queue
-
 from subprocess import Popen, PIPE
+import time
 
 
 class InputClient:
@@ -54,15 +54,26 @@ class InputClient:
 
         return text
 
-    def write(self, char: str):
-        assert len(char) == 1
-        if char == "\b":
+    def write(self, text: str, delay: float = 0.0):
+        # self._write_pynput(char)
+        # self._write_ctrlshiftu(char)
+        self._write_clipboard(text)
+
+    def send_backspace(self, num_backspace: int, delay: float = 0.0):
+        for _ in range(num_backspace):
             self.controller.press(pkeyboard.Key.backspace)
             self.controller.release(pkeyboard.Key.backspace)
-        else:
-            # self._write_pynput(char)
-            # self._write_ctrlshiftu(char)
-            self._write_clipboard(char)
+
+            # self._accurate_delay(delay)
+
+    def _accurate_delay(self, delay):
+        """
+        Function to provide accurate time delay
+        From https://stackoverflow.com/a/50899124
+        """
+        target_time = time.perf_counter() + delay
+        while time.perf_counter() < target_time:
+            pass
 
     def _write_pynput(self, char: str):
         """
@@ -103,7 +114,7 @@ class InputClient:
         self.controller.press(pkeyboard.Key.enter)
         self.controller.release(pkeyboard.Key.enter)
 
-    def _write_clipboard(self, char: str):
+    def _write_clipboard(self, text: str):
         """
         Writes the character to the clipboard and pastes it. This seems to work in most cases
         unlike the other methods.
@@ -118,7 +129,7 @@ class InputClient:
             p.communicate(input=text.encode('utf-8'))
             p.wait()
 
-        copy_to_clipboard(char)
+        copy_to_clipboard(text)
         self.controller.press(pkeyboard.Key.ctrl)
         self.controller.press("v")
         self.controller.release("v")

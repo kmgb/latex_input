@@ -1,6 +1,7 @@
 import ahk
 import atexit
 import keyboard
+import time
 
 ahk_wait_activation = r"""
 #NoEnv
@@ -91,9 +92,29 @@ class InputClient:
 
         return result
 
-    def write(self, char: str):
+    def write(self, text: str, delay: float = 0.0):
         # self._do_script(f"Send, {char}")
-        keyboard.write(char)  # TODO: See if ahk can be used instead
+
+        # FIXME: Can use keyboard.write(text, delay=...) after Python 3.11
+        for c in text:
+            # Don't use built-in delay parameter as it uses time.sleep
+            # which doesn't have good time accurancy until Python 3.11
+            keyboard.write(c)
+            self._accurate_delay(delay)
+
+    def send_backspace(self, num_backspace: int, delay: float = 0.0):
+        for _ in range(num_backspace):
+            keyboard.send("backspace")
+            self._accurate_delay(delay)
+
+    def _accurate_delay(self, delay):
+        """
+        Function to provide accurate time delay
+        From https://stackoverflow.com/a/50899124
+        """
+        target_time = time.perf_counter() + delay
+        while time.perf_counter() < target_time:
+            pass
 
     def _do_script(self, script: str) -> str:
         # We choose blocking=False to get a Popen instance, then block
