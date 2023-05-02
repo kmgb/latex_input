@@ -1,16 +1,16 @@
 [project]
 name = "latex_input"
 description = "Use LaTeX-style inputs to write the equivalent unicode characters anywhere"
-version = "0.2.2"
+version = "0.2.3"
 authors = [
     { name = "kmgb", email = "kevinmgb@proton.me" }
 ]
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "PyQt5==5.15.7",
-    "ahk==0.14.2",
-    "ahk-binary==1.1.33.9",
+    "PyQt6",
+    "ahk",
+    "ahk-binary",
     "keyboard==0.13.5"
 ]
 classifiers = [
