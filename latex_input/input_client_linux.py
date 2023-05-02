@@ -113,8 +113,10 @@ class InputClient:
         - Only works if Ctrl-v is the paste shortcut (not true for terminals)
         """
         def copy_to_clipboard(text: str):
+            # TODO: Wayland support with wclip
             p = Popen(['xclip', '-selection', 'clipboard'], stdin=PIPE)
             p.communicate(input=text.encode('utf-8'))
+            p.wait()
 
         copy_to_clipboard(char)
         self.controller.press(pkeyboard.Key.ctrl)

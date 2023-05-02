@@ -8,9 +8,11 @@ import sys
 import time
 from importlib.resources import files
 
+ACTIVATION_HOTKEY = "CapsLock+S"
 if os.name == "nt":
     from latex_input.input_client_win import InputClient
 elif os.name == "posix":
+    ACTIVATION_HOTKEY = "Ctrl+Alt+I"
     from latex_input.input_client_linux import InputClient
 else:
     from latex_input.input_client_generic import InputClient
@@ -210,7 +212,7 @@ def run_gui():
     layout.addWidget(QtWidgets.QLabel(
         "How to use:"
         "<ol>"
-        "<li>Press <b>CapsLock+S</b> to enter input mode</li>"
+        f"<li>Press <b>{ACTIVATION_HOTKEY}</b> to enter input mode</li>"
         "<li>Enter your desired LaTeX</li>"
         "<li>Press <b>Space</b> to translate the text</li>"
         "<li>Press <b>Esc</b> to exit input mode</li>"
