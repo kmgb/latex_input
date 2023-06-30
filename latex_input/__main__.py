@@ -1,3 +1,6 @@
+from latex_input.latex_converter import latex_to_unicode, FontContext
+from latex_input.unicode_structs import FontVariantType
+
 import argparse
 import threading
 from typing import Final
@@ -11,13 +14,11 @@ ACTIVATION_HOTKEY = "CapsLock+S"
 if os.name == "nt":
     from latex_input.input_client_win import InputClient
 elif os.name == "posix":
-    ACTIVATION_HOTKEY = "Ctrl+Alt+I"
+    ACTIVATION_HOTKEY = "Ctrl+Alt+I"  # Only windows supports fancy CapsLock hotkeys
     from latex_input.input_client_linux import InputClient
 else:
     raise NotImplementedError("Unsupported OS")
 
-from latex_input.latex_converter import latex_to_unicode, FontContext
-from latex_input.unicode_structs import FontVariantType
 
 APP_NAME: Final[str] = "LaTeX Input"
 APP_ICON_FILE: Final[str] = str(files('latex_input.data').joinpath('icon.ico'))

@@ -34,7 +34,7 @@ class InputClient:
                 if isinstance(e, pkeyboard.Events.Release):
                     continue
 
-                if e.key == pkeyboard.Key.space:
+                if e.key in [pkeyboard.Key.space, pkeyboard.Key.enter]:
                     self.queue.put(self.key_log)
                     break
                 elif e.key == pkeyboard.Key.backspace:
