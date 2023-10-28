@@ -83,9 +83,6 @@ class InputClient:
         """
         self.controller.type(char)
 
-    # TODO: Add Ctrl-shift-u method of typing unicode characters
-    # in case the pynput method fails for some cases.
-
     def _write_ctrlshiftu(self, char: str):
         """
         Write a character to the active window using Ctrl+Shift+U

@@ -2,12 +2,11 @@ import argparse
 import threading
 from typing import Final
 from PyQt6 import QtGui, QtWidgets, QtCore
-import keyboard
 import os
 import sys
 from importlib.resources import files
 
-ACTIVATION_HOTKEY = "CapsLock+S"
+ACTIVATION_HOTKEY = "\\ (backslash)"
 if os.name == "nt":
     from latex_input.input_client_win import InputClient
 elif os.name == "posix":
@@ -92,11 +91,6 @@ def main():
     thread = threading.Thread(target=input_thread, daemon=True)
     thread.start()
 
-    if os.name == "nt":
-        # The first call to `send` is slow on Windows
-        # We send a generally unused key to avoid this slowdown
-        keyboard.send('f24')  # 'reserved '
-
     print(f"{APP_NAME} started")
 
     if args.no_gui:
@@ -143,6 +137,7 @@ def input_thread():
 
         if translated_text:
             num_backspace = len(text) + 1  # +1 for space character
+
             client.send_backspace(num_backspace, delay=use_key_delay * KEYPRESS_DELAY)
 
             print(f"Writing: '{translated_text}'")
