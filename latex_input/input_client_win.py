@@ -3,9 +3,12 @@ import atexit
 import keyboard
 import time
 
-ahk_wait_activation = r"""
+AHK_PREAMBLE = r"""
 #NoEnv
 #NoTrayIcon
+"""
+
+AHK_WAIT_ACTIVATION_SCRIPT = AHK_PREAMBLE + r"""
 CapsLock & s::
     ; This script exits before it can toggle CapsLock back
     ; So we manually toggle it to its original state
@@ -14,9 +17,7 @@ CapsLock & s::
 return
 """
 
-ahk_listen_script = r"""
-#NoEnv
-#NoTrayIcon
+AHK_LISTEN_SCRIPT = AHK_PREAMBLE + r"""
 SendDeactivation()
 {
     var := Chr(16)Chr(3)
@@ -27,7 +28,7 @@ SendBackspace(value)
 {
     bs := Chr(8)
     FileAppend, %value%, *, UTF-8
-    FileAppend, %bs%, *, UTF-8  ; Send a special code at the end to indicate backspace was pressed
+    FileAppend, %bs%, *, UTF-8  ; Send the ASCII backspace key character
 }
 
 Input, value, V, {Space}{Tab}{BS}{Esc}{LControl}{RControl}{LAlt}{RAlt}{LWin}{RWin}{AppsKey}{F1}{F2}{F3}{F4}{F5}{F6}{F7}{F8}{F9}{F10}{F11}{F12}{Left}{Right}{Up}{Down}{Home}{End}{PgUp}{PgDn}{Del}{Ins}{NumLock}{PrintScreen}{Pause}
@@ -71,13 +72,13 @@ class InputClient:
             self.proc.kill()
 
     def wait_for_hotkey(self):
-        self._do_script(ahk_wait_activation)
+        self._do_script(AHK_WAIT_ACTIVATION_SCRIPT)
 
     def listen(self, starting_text: str) -> str | None:
         result = starting_text
 
         while True:
-            data = self._do_script(ahk_listen_script)
+            data = self._do_script(AHK_LISTEN_SCRIPT)
 
             if data == "\x10\x03":  # Cancellation sequence
                 return None
@@ -93,19 +94,22 @@ class InputClient:
         return result
 
     def write(self, text: str, delay: float = 0.0):
-        # self._do_script(f"Send, {char}")
+        ahk_send_keys_script = (
+            AHK_PREAMBLE +
+            f"SetKeyDelay, {delay * 1000}\n"
+            f"Send, {text}\n"
+        )
 
-        # FIXME: Can use keyboard.write(text, delay=...) after Python 3.11
-        for c in text:
-            # Don't use built-in delay parameter as it uses time.sleep
-            # which doesn't have good time accurancy until Python 3.11
-            keyboard.write(c)
-            self._accurate_delay(delay)
+        self._do_script(ahk_send_keys_script)
 
     def send_backspace(self, num_backspace: int, delay: float = 0.0):
-        for _ in range(num_backspace):
-            keyboard.send("backspace")
-            self._accurate_delay(delay)
+        ahk_backspace_script = (
+            AHK_PREAMBLE +
+            f"SetKeyDelay, {delay * 1000}\n"
+            f"Send, {{BACKSPACE {num_backspace}}}\n"
+        )
+
+        self._do_script(ahk_backspace_script)
 
     def _accurate_delay(self, delay):
         """
